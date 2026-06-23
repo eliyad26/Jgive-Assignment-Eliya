@@ -1,0 +1,55 @@
+he:
+  datetime:
+    distance_in_words:
+      half_a_minute: "חצי דקה"
+      less_than_x_seconds:
+        one: "פחות משנייה"
+        other: "פחות מ-%{count} שניות"
+      x_seconds:
+        one: "שנייה"
+        other: "%{count} שניות"
+      less_than_x_minutes:
+        one: "פחות מדקה"
+        other: "פחות מ-%{count} דקות"
+      x_minutes:
+        one: "דקה"
+        other: "%{count} דקות"
+      about_x_hours:
+        one: "כשעה"
+        other: "כ-%{count} שעות"
+      x_days:
+        one: "יום"
+        other: "%{count} ימים"
+      about_x_months:
+        one: "כחודש"
+        other: "כ-%{count} חודשים"
+      x_months:
+        one: "חודש"
+        other: "%{count} חודשים"
+      about_x_years:
+        one: "כשנה"
+        other: "כ-%{count} שנים"
+      over_x_years:
+        one: "יותר משנה"
+        other: "יותר מ-%{count} שנים"
+      almost_x_years:
+        one: "כמעט שנה"
+        other: "כמעט %{count} שנים"
+  number:
+    format:
+      separator: "."
+      delimiter: ","
+      precision: 3
+      significant: false
+      strip_insignificant_zeros: false
+    human:
+      storage_units:
+        format: "%n %u"
+        units:
+          byte:
+            one: "בית"
+            other: "בייטים"
+          kb: "ק\"ב"
+          mb: "מ\"ב"
+          gb: "ג\"ב"
+          tb: "ט\"ב"

@@ -13,7 +13,7 @@ class Donation < ApplicationRecord
     case display_preference
     when "full_name"  then donor_name
     when "first_name" then donor_name.split.first
-    when "anonymous"  then "תורם אנונימי"
+    when "anonymous"  then "תורם/ת אנונימי/ת"
     end
   end
 end

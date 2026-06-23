@@ -13,5 +13,7 @@ module JgiveAssignmentEliya
   class Application < Rails::Application
     config.load_defaults 8.1
     config.time_zone = "Jerusalem"
+    config.i18n.default_locale = :he
+    config.i18n.available_locales = %i[he en]
   end
 end

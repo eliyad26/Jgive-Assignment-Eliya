@@ -50,7 +50,7 @@ Visit http://localhost:3000
 
 | Method | Returns |
 |--------|---------|
-| `displayed_name` | respects `display_preference`: full name / first name only / "תורם אנונימי" |
+| `displayed_name` | respects `display_preference`: full name / first name only / "תורם/ת אנונימי/ת" |
 
 ### Seed data
 
@@ -74,7 +74,22 @@ Re-seed at any time: `ruby bin/rails db:seed` (truncates first).
 
 **View structure:**
 - `app/views/layouts/application.html.erb` — RTL layout (`lang="he" dir="rtl"`), Heebo font (Google Fonts), Tailwind CDN
-- `app/views/campaigns/show.html.erb` — campaign header strip + placeholder tab/form sections
+- `app/views/campaigns/show.html.erb` — header strip + three-tab layout (Story / Updates / Donors)
+- `app/views/shared/_empty_state.html.erb` — reusable empty-state component (icon, title, subtitle locals)
+
+Tab routing is query-param based: `?tab=story` (default) / `?tab=updates` / `?tab=donors`.
+Active tab styling uses a teal underline border; switching is a full page load (no JS required).
+
+**Donor display rules (Donors tab):**
+
+| `display_preference` | Shown as |
+|---------------------|---------|
+| `full_name` | full `donor_name` as entered |
+| `first_name` | first token of `donor_name` only |
+| `anonymous` | "תורם/ת אנונימי/ת" with a person silhouette avatar |
+
+Relative timestamps use Rails' `time_ago_in_words` with Hebrew locale strings from
+`config/locales/he.yml` (no `rails-i18n` gem needed — translations are inlined).
 
 **Helpers (`app/helpers/application_helper.rb`):**
 
@@ -126,6 +141,27 @@ Three visual states across the seed campaigns:
 - **RTL achieved via `dir="rtl"` on `<html>`** — Tailwind's RTL utilities (e.g. `rtl:flex-row-reverse`)
   are not needed; native browser RTL flips flex order automatically.
 - **Media fallback order**: `video_url` (YouTube embed) → `cover_image_url` → teal placeholder.
+
+### Task 3: Donors tab
+
+- **Pending badge is always visible** — `status: "pending"` donations are shown with an
+  amber "ממתין לאישור" badge rather than being hidden. This makes the pending state visible
+  to campaign reviewers without requiring an admin UI, and is consistent with the fact that
+  `display_donations` already includes pending donations in totals.
+- **Anonymous avatar uses a silhouette SVG** — avoids showing a letter initial (which would
+  hint at the donor's name) while still giving the row a consistent visual weight.
+- **`display_preference: "first_name"` shows only the first token** — splitting on whitespace
+  and taking `[0]` is intentionally naive; it covers the common Hebrew case where a first name
+  comes first and a patronymic or family name follows.
+- **Hebrew relative timestamps without `rails-i18n` gem** — `config/locales/he.yml` provides
+  only the `datetime.distance_in_words` keys needed by `time_ago_in_words`. This avoids adding
+  a gem dependency that would require a network-available `bundle install` on the target machine.
+- **Tab switching is server-rendered** — `?tab=<name>` query param; no JavaScript or Stimulus
+  needed. Each tab click is a full page load, which is fine for a read-heavy campaign page and
+  keeps the implementation within scope.
+- **`shared/_empty_state` partial accepts `icon:`, `title:`, `subtitle:` locals** — the `icon:`
+  symbol maps to three distinct SVG paths (`:box`, `:bell`, `:users`) so each tab can have a
+  contextually appropriate illustration without duplicating markup.
 
 ### Wiring in a Real Payment Provider
 
