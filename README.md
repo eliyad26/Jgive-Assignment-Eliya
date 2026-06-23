@@ -195,8 +195,27 @@ Three visual states across the seed campaigns:
 - **Sticky sidebar offset** — `sticky top-20` (5 rem = 80 px) clears the `h-14` (56 px)
   sticky site header plus a small breathing gap. `self-start` prevents the sidebar from
   stretching to the full column height, which would disable sticky.
-- **Flash messages** — success notice / error alert rendered as a full-width colored banner
-  below the sticky header in `application.html.erb`. No JS auto-dismiss needed for this scope.
+- **Flash messages** — green banner for notice, red for alert, below the sticky header.
+  Auto-dismissed after 5 s via a small `setTimeout` script in the layout (no Stimulus needed).
+
+### Task 5: Controller flow
+
+- **Flash message on success**: "תודה! התרומה שלך התקבלה" — redirect to
+  `?tab=donors#donors-list` so the browser scrolls past the sidebar directly to the
+  donor list where the new pending donation is already visible.
+- **Validation failure re-renders** — `DonationsController#create` calls
+  `render "campaigns/show", status: :unprocessable_entity` instead of redirecting.
+  `@donation` (with `errors`) is used by the form partial to apply `border-red-400`
+  on the offending fields and show an error summary at the top of the card.
+  `@donation ||= build(frequency: "monthly")` in `CampaignsController#show` keeps
+  the normal GET path from interfering.
+- **Form pre-fill on failure** — `donation.donor_name`, `donation.dedication`,
+  `donation.frequency`, `donation.display_preference`, and `donation.amount_cents`
+  are all read by the form partial to restore the user's submitted values.
+- **Progress bar auto-updates** — `Campaign#total_raised_cents` already sums
+  `status IN ('pending', 'paid')`, so the header strip's raised amount and progress
+  percentage reflect the new donation the moment the page re-renders after a successful
+  save. No extra wiring needed.
 
 ### Wiring in a Real Payment Provider
 

@@ -1,5 +1,13 @@
-<%# Donation form card — rendered as sticky sidebar on desktop, stacked section on mobile.
-    Local: campaign (Campaign) %>
+<%# Donation form card.
+    Locals:
+      campaign  (Campaign)  — required
+      donation  (Donation)  — required; use a freshly-built record on new, saved record with
+                              errors on re-render. Controls pre-fill and inline error display. %>
+
+<% selected_freq = donation.frequency.presence || "monthly" %>
+<% amount_ils    = donation.amount_cents.to_i > 0 ? (donation.amount_cents / 100) : 250 %>
+<% selected_pref = donation.display_preference.presence || "full_name" %>
+<% presets       = [50, 100, 250, 500, 1_000, 1_800] %>
 
 <%= form_with url: campaign_donations_path(campaign), method: :post,
               id: "donation-form-el", html: { novalidate: true } do %>
@@ -9,27 +17,47 @@
     <%# ── Card heading ────────────────────────────────────────────────────── %>
     <h2 class="text-lg font-black text-gray-900 text-center mb-5">תרמו עכשיו</h2>
 
+    <%# ── Validation error summary (only on re-render) ──────────────────── %>
+    <% if donation.errors.any? %>
+      <div class="mb-4 px-4 py-3 rounded-xl bg-red-50 border border-red-200 text-sm text-red-700 text-right">
+        <p class="font-semibold mb-1">נא לתקן את הפרטים הבאים:</p>
+        <ul class="list-disc list-inside space-y-0.5">
+          <% if donation.errors[:donor_name].any? %>
+            <li>יש להזין שם תורם/ת</li>
+          <% end %>
+          <% if donation.errors[:amount_cents].any? %>
+            <li>יש להזין סכום תרומה חיובי</li>
+          <% end %>
+          <% (donation.errors.attribute_names - [:donor_name, :amount_cents]).each do |attr| %>
+            <% donation.errors[attr].each do |msg| %>
+              <li><%= msg %></li>
+            <% end %>
+          <% end %>
+        </ul>
+      </div>
+    <% end %>
+
     <%# ── Frequency toggle — monthly is the preferred/default option ───────── %>
     <div class="flex bg-gray-100 rounded-xl p-1 gap-1 mb-6 text-sm">
-      <%# Monthly comes first → RIGHT side in RTL (the emphatic position) %>
-      <button type="button" id="btn-monthly" data-freq="monthly"
-              class="freq-btn flex-1 py-2.5 px-3 rounded-lg text-center transition-all duration-150
-                     bg-white shadow-sm font-semibold text-teal-600">
-        חודשית
-        <span class="block text-[10px] font-normal mt-0.5" style="color:#0da89e">מומלץ</span>
-      </button>
-      <button type="button" id="btn-onetime" data-freq="one_time"
-              class="freq-btn flex-1 py-2.5 px-3 rounded-lg text-center transition-all duration-150
-                     font-medium text-gray-500">
-        חד פעמית
-      </button>
-      <input type="hidden" name="donation[frequency]" id="freq-value" value="monthly">
+      <% { "monthly" => "חודשית", "one_time" => "חד פעמית" }.each do |freq, label| %>
+        <% is_active = selected_freq == freq %>
+        <button type="button" data-freq="<%= freq %>"
+                class="freq-btn flex-1 py-2.5 px-3 rounded-lg text-center transition-all duration-150
+                       <%= is_active ? 'bg-white shadow-sm font-semibold text-teal-600' : 'font-medium text-gray-500' %>">
+          <%= label %>
+          <% if freq == "monthly" %>
+            <span class="block text-[10px] font-normal mt-0.5" style="color:#0da89e">מומלץ</span>
+          <% end %>
+        </button>
+      <% end %>
+      <input type="hidden" name="donation[frequency]" id="freq-value" value="<%= selected_freq %>">
     </div>
 
-    <%# ── Preset amount grid (3 × 2) ────────────────────────────────────────── %>
+    <%# ── Preset amount grid (3 × 2) ─────────────────────────────────────── %>
     <p class="text-[11px] font-semibold text-gray-400 mb-2 tracking-wide uppercase">בחרו סכום</p>
     <div class="grid grid-cols-3 gap-2 mb-3">
-      <% [[50, false], [100, false], [250, true], [500, false], [1_000, false], [1_800, false]].each do |amt, active| %>
+      <% presets.each do |amt| %>
+        <% active = amt == amount_ils %>
         <button type="button" data-preset="<%= amt %>"
                 class="preset-btn py-3 rounded-xl text-sm font-bold border transition-all duration-100
                        <%= active \
@@ -43,33 +71,42 @@
     <%# ── Custom amount input ─────────────────────────────────────────────── %>
     <div class="mb-5">
       <input type="number" id="donation-amount" name="donation[amount_ils]"
-             min="1" step="1" value="250" required
+             min="1" step="1" value="<%= amount_ils %>"
              placeholder="סכום אחר (₪)"
-             class="w-full py-3 px-4 rounded-xl border border-gray-200 text-center
-                    text-base font-bold text-gray-800 focus:outline-none
-                    focus:ring-2 focus:ring-teal-400 focus:border-transparent transition-shadow">
+             class="w-full py-3 px-4 rounded-xl border text-center text-base font-bold
+                    text-gray-800 focus:outline-none focus:ring-2 focus:ring-teal-400
+                    focus:border-transparent transition-shadow
+                    <%= donation.errors[:amount_cents].any? ? 'border-red-400 ring-1 ring-red-300' : 'border-gray-200' %>">
+      <% if donation.errors[:amount_cents].any? %>
+        <p class="mt-1 text-xs text-red-500 text-center">יש להזין סכום חיובי</p>
+      <% end %>
     </div>
 
-    <%# ── Donor name ─────────────────────────────────────────────────────── %>
+    <%# ── Donor name ──────────────────────────────────────────────────────── %>
     <div class="mb-4">
       <label class="block text-xs font-semibold text-gray-500 mb-1.5" for="donation-name">
         שם התורם/ת <span class="text-red-400">*</span>
       </label>
       <input type="text" id="donation-name" name="donation[donor_name]"
-             required autocomplete="name" placeholder="שם מלא"
-             class="w-full px-4 py-3 rounded-xl border border-gray-200 text-sm
+             value="<%= donation.donor_name %>"
+             autocomplete="name" placeholder="שם מלא"
+             class="w-full px-4 py-3 rounded-xl border text-sm
                     focus:outline-none focus:ring-2 focus:ring-teal-400 focus:border-transparent
-                    transition-shadow">
+                    transition-shadow
+                    <%= donation.errors[:donor_name].any? ? 'border-red-400 ring-1 ring-red-300' : 'border-gray-200' %>">
+      <% if donation.errors[:donor_name].any? %>
+        <p class="mt-1 text-xs text-red-500">יש להזין שם תורם/ת</p>
+      <% end %>
     </div>
 
-    <%# ── Display preference ─────────────────────────────────────────────── %>
+    <%# ── Display preference ──────────────────────────────────────────────── %>
     <div class="mb-4">
       <p class="text-xs font-semibold text-gray-500 mb-2">הצגת שמי ברשימת התורמים</p>
       <div class="space-y-2">
-        <% [["full_name", "הצג שם מלא"], ["first_name", "הצג שם פרטי בלבד"], ["anonymous", "תרומה אנונימית"]].each_with_index do |(val, label), i| %>
+        <% [["full_name", "הצג שם מלא"], ["first_name", "הצג שם פרטי בלבד"], ["anonymous", "תרומה אנונימית"]].each do |val, label| %>
           <label class="flex items-center gap-2.5 text-sm text-gray-700 cursor-pointer select-none">
             <input type="radio" name="donation[display_preference]" value="<%= val %>"
-                   <%= "checked" if i.zero? %>
+                   <%= "checked" if selected_pref == val %>
                    class="w-4 h-4 accent-teal-500 cursor-pointer">
             <%= label %>
           </label>
@@ -77,7 +114,7 @@
       </div>
     </div>
 
-    <%# ── Dedication ─────────────────────────────────────────────────────── %>
+    <%# ── Dedication ──────────────────────────────────────────────────────── %>
     <div class="mb-6">
       <label class="block text-xs font-semibold text-gray-500 mb-1.5" for="donation-dedication">
         הקדשה <span class="font-normal text-gray-400">(אופציונלי)</span>
@@ -86,10 +123,10 @@
                 placeholder="לזכר... / לרפואת... / לכבוד..."
                 class="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm resize-none
                        focus:outline-none focus:ring-2 focus:ring-teal-400 focus:border-transparent
-                       transition-shadow"></textarea>
+                       transition-shadow"><%= donation.dedication %></textarea>
     </div>
 
-    <%# ── Submit ─────────────────────────────────────────────────────────── %>
+    <%# ── Submit ──────────────────────────────────────────────────────────── %>
     <button type="submit"
             class="w-full py-4 rounded-2xl text-white font-black text-lg shadow-lg
                    transition-colors duration-200"
@@ -108,74 +145,82 @@
 <%# ── Minimal inline JS: presets + frequency toggle + client validation ──── %>
 <script>
 (function () {
-  var form     = document.getElementById('donation-form-el');
-  var amtInput = document.getElementById('donation-amount');
+  var form       = document.getElementById('donation-form-el');
+  var amtInput   = document.getElementById('donation-amount');
   var freqHidden = document.getElementById('freq-value');
 
   // ── Preset amount buttons ─────────────────────────────────────────────────
   var presetBtns = document.querySelectorAll('.preset-btn');
-
-  var ACTIVE_PRESET   = ['border-teal-500','bg-teal-50','text-teal-600','ring-1','ring-teal-400/50'];
-  var INACTIVE_PRESET = ['border-gray-200','text-gray-600'];
+  var ACTIVE_P   = ['border-teal-500','bg-teal-50','text-teal-600','ring-1','ring-teal-400/50'];
+  var INACTIVE_P = ['border-gray-200','text-gray-600'];
 
   function clearPresets() {
     presetBtns.forEach(function (b) {
-      ACTIVE_PRESET.forEach(function (c) { b.classList.remove(c); });
-      INACTIVE_PRESET.forEach(function (c) { b.classList.add(c); });
+      ACTIVE_P.forEach(function (c) { b.classList.remove(c); });
+      INACTIVE_P.forEach(function (c) { b.classList.add(c); });
     });
-  }
-
-  function activatePreset(btn) {
-    clearPresets();
-    INACTIVE_PRESET.forEach(function (c) { btn.classList.remove(c); });
-    ACTIVE_PRESET.forEach(function (c) { btn.classList.add(c); });
   }
 
   presetBtns.forEach(function (btn) {
     btn.addEventListener('click', function () {
       amtInput.value = this.dataset.preset;
-      activatePreset(this);
+      clearPresets();
+      INACTIVE_P.forEach(function (c) { btn.classList.remove(c); });
+      ACTIVE_P.forEach(function (c) { btn.classList.add(c); });
     });
   });
 
-  // Typing a custom amount deselects all presets
   amtInput.addEventListener('input', clearPresets);
 
   // ── Frequency toggle ──────────────────────────────────────────────────────
-  var freqBtns = document.querySelectorAll('.freq-btn');
-
-  var ACTIVE_FREQ   = ['bg-white','shadow-sm','font-semibold','text-teal-600'];
-  var INACTIVE_FREQ = ['font-medium','text-gray-500'];
-
-  function activateFreq(btn) {
-    freqBtns.forEach(function (b) {
-      ACTIVE_FREQ.forEach(function (c) { b.classList.remove(c); });
-      INACTIVE_FREQ.forEach(function (c) { b.classList.add(c); });
-    });
-    INACTIVE_FREQ.forEach(function (c) { btn.classList.remove(c); });
-    ACTIVE_FREQ.forEach(function (c) { btn.classList.add(c); });
-    freqHidden.value = btn.dataset.freq;
-  }
+  var freqBtns  = document.querySelectorAll('.freq-btn');
+  var ACTIVE_F  = ['bg-white','shadow-sm','font-semibold','text-teal-600'];
+  var INACTIVE_F = ['font-medium','text-gray-500'];
 
   freqBtns.forEach(function (btn) {
-    btn.addEventListener('click', function () { activateFreq(this); });
+    btn.addEventListener('click', function () {
+      freqBtns.forEach(function (b) {
+        ACTIVE_F.forEach(function (c) { b.classList.remove(c); });
+        INACTIVE_F.forEach(function (c) { b.classList.add(c); });
+      });
+      INACTIVE_F.forEach(function (c) { btn.classList.remove(c); });
+      ACTIVE_F.forEach(function (c) { btn.classList.add(c); });
+      freqHidden.value = btn.dataset.freq;
+    });
   });
 
   // ── Client-side validation ────────────────────────────────────────────────
-  function flashError(el) {
+  function flashError(el, msg) {
     el.classList.add('ring-2','ring-red-400','border-red-400');
     el.focus();
+    // Show or update inline error
+    var errEl = el.nextElementSibling;
+    if (!errEl || !errEl.dataset.jsErr) {
+      errEl = document.createElement('p');
+      errEl.dataset.jsErr = '1';
+      errEl.className = 'mt-1 text-xs text-red-500';
+      el.insertAdjacentElement('afterend', errEl);
+    }
+    errEl.textContent = msg;
     setTimeout(function () {
       el.classList.remove('ring-2','ring-red-400','border-red-400');
-    }, 3000);
+    }, 4000);
   }
 
   form.addEventListener('submit', function (e) {
     var amt  = parseFloat(amtInput.value);
     var name = document.getElementById('donation-name').value.trim();
+    var ok   = true;
 
-    if (!amt || amt <= 0) { e.preventDefault(); flashError(amtInput); return; }
-    if (!name)            { e.preventDefault(); flashError(document.getElementById('donation-name')); }
+    if (!name) {
+      flashError(document.getElementById('donation-name'), 'יש להזין שם תורם/ת');
+      ok = false;
+    }
+    if (!amt || amt <= 0) {
+      flashError(amtInput, 'יש להזין סכום חיובי');
+      ok = false;
+    }
+    if (!ok) e.preventDefault();
   });
 }());
 </script>

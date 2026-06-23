@@ -49,18 +49,32 @@
   </header>
 
   <main>
-    <%# Flash messages — appear as a banner between the sticky header and page content %>
-    <% flash.each do |type, msg| %>
-      <% flash_class = type.to_s == "notice" \
-           ? "bg-teal-50 text-teal-800 border-b border-teal-200" \
+    <%# Flash messages ── green banner for notice, red for alert; auto-dismissed after 5 s %>
+    <% flash.each_with_index do |(type, msg), i| %>
+      <% is_notice = type.to_s == "notice" %>
+      <% flash_class = is_notice \
+           ? "bg-green-50 text-green-800 border-b border-green-200" \
            : "bg-red-50 text-red-800 border-b border-red-200" %>
-      <div class="px-4 py-3 text-sm font-medium text-center <%= flash_class %>">
+      <div id="flash-<%= i %>" role="<%= is_notice ? 'status' : 'alert' %>"
+           class="px-4 py-3 text-sm font-medium text-center transition-opacity duration-500 <%= flash_class %>">
         <%= msg %>
       </div>
     <% end %>
 
     <%= yield %>
   </main>
+
+  <%# Auto-dismiss all flash banners after 5 s %>
+  <% if flash.any? %>
+    <script>
+      setTimeout(function () {
+        document.querySelectorAll('[id^="flash-"]').forEach(function (el) {
+          el.style.opacity = '0';
+          setTimeout(function () { el.remove(); }, 500);
+        });
+      }, 5000);
+    </script>
+  <% end %>
 
 </body>
 </html>

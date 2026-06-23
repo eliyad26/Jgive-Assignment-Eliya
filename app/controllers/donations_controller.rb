@@ -16,11 +16,11 @@ class DonationsController < ApplicationController
     )
 
     if @donation.save
-      redirect_to campaign_path(@campaign, tab: "donors"),
-                  notice: "תודה! תרומתך נרשמה בהצלחה ותאושר בקרוב."
+      redirect_to campaign_path(@campaign, tab: "donors", anchor: "donors-list"),
+                  notice: "תודה! התרומה שלך התקבלה"
     else
-      redirect_to campaign_path(@campaign),
-                  alert: @donation.errors.full_messages.join(" | ")
+      @active_tab = "story"
+      render "campaigns/show", status: :unprocessable_entity
     end
   end
 

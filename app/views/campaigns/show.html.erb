@@ -127,7 +127,7 @@
     <%# ── Donation form sidebar ────────────────────────────────────────────── %>
     <aside id="donation-form"
            class="w-full lg:w-80 xl:w-96 flex-shrink-0 lg:sticky lg:top-20 lg:self-start">
-      <%= render "donations/form", campaign: @campaign %>
+      <%= render "donations/form", campaign: @campaign, donation: @donation %>
     </aside>
 
     <%# ── Main content: tabs + tab panels ───────────────────────────────────── %>
@@ -180,6 +180,7 @@
 
       <%# ── Donors tab ───────────────────────────────────────────────────── %>
       <% elsif @active_tab == "donors" %>
+        <div id="donors-list">
         <% donors = @campaign.display_donations %>
         <% if donors.empty? %>
           <%= render "shared/empty_state",
@@ -247,6 +248,7 @@
             <% end %>
           </div>
         <% end %>
+        </div><%# /donors-list %>
       <% end %>
 
     </div><%# /main content %>
