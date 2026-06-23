@@ -49,6 +49,16 @@
   </header>
 
   <main>
+    <%# Flash messages — appear as a banner between the sticky header and page content %>
+    <% flash.each do |type, msg| %>
+      <% flash_class = type.to_s == "notice" \
+           ? "bg-teal-50 text-teal-800 border-b border-teal-200" \
+           : "bg-red-50 text-red-800 border-b border-red-200" %>
+      <div class="px-4 py-3 text-sm font-medium text-center <%= flash_class %>">
+        <%= msg %>
+      </div>
+    <% end %>
+
     <%= yield %>
   </main>
 

@@ -1,0 +1,181 @@
+<%# Donation form card — rendered as sticky sidebar on desktop, stacked section on mobile.
+    Local: campaign (Campaign) %>
+
+<%= form_with url: campaign_donations_path(campaign), method: :post,
+              id: "donation-form-el", html: { novalidate: true } do %>
+
+  <div class="bg-white rounded-2xl shadow-md border border-gray-100 p-6">
+
+    <%# ── Card heading ────────────────────────────────────────────────────── %>
+    <h2 class="text-lg font-black text-gray-900 text-center mb-5">תרמו עכשיו</h2>
+
+    <%# ── Frequency toggle — monthly is the preferred/default option ───────── %>
+    <div class="flex bg-gray-100 rounded-xl p-1 gap-1 mb-6 text-sm">
+      <%# Monthly comes first → RIGHT side in RTL (the emphatic position) %>
+      <button type="button" id="btn-monthly" data-freq="monthly"
+              class="freq-btn flex-1 py-2.5 px-3 rounded-lg text-center transition-all duration-150
+                     bg-white shadow-sm font-semibold text-teal-600">
+        חודשית
+        <span class="block text-[10px] font-normal mt-0.5" style="color:#0da89e">מומלץ</span>
+      </button>
+      <button type="button" id="btn-onetime" data-freq="one_time"
+              class="freq-btn flex-1 py-2.5 px-3 rounded-lg text-center transition-all duration-150
+                     font-medium text-gray-500">
+        חד פעמית
+      </button>
+      <input type="hidden" name="donation[frequency]" id="freq-value" value="monthly">
+    </div>
+
+    <%# ── Preset amount grid (3 × 2) ────────────────────────────────────────── %>
+    <p class="text-[11px] font-semibold text-gray-400 mb-2 tracking-wide uppercase">בחרו סכום</p>
+    <div class="grid grid-cols-3 gap-2 mb-3">
+      <% [[50, false], [100, false], [250, true], [500, false], [1_000, false], [1_800, false]].each do |amt, active| %>
+        <button type="button" data-preset="<%= amt %>"
+                class="preset-btn py-3 rounded-xl text-sm font-bold border transition-all duration-100
+                       <%= active \
+                           ? 'border-teal-500 bg-teal-50 text-teal-600 ring-1 ring-teal-400/50' \
+                           : 'border-gray-200 text-gray-600 hover:border-teal-300 hover:text-teal-600' %>">
+          ₪<%= number_with_delimiter(amt) %>
+        </button>
+      <% end %>
+    </div>
+
+    <%# ── Custom amount input ─────────────────────────────────────────────── %>
+    <div class="mb-5">
+      <input type="number" id="donation-amount" name="donation[amount_ils]"
+             min="1" step="1" value="250" required
+             placeholder="סכום אחר (₪)"
+             class="w-full py-3 px-4 rounded-xl border border-gray-200 text-center
+                    text-base font-bold text-gray-800 focus:outline-none
+                    focus:ring-2 focus:ring-teal-400 focus:border-transparent transition-shadow">
+    </div>
+
+    <%# ── Donor name ─────────────────────────────────────────────────────── %>
+    <div class="mb-4">
+      <label class="block text-xs font-semibold text-gray-500 mb-1.5" for="donation-name">
+        שם התורם/ת <span class="text-red-400">*</span>
+      </label>
+      <input type="text" id="donation-name" name="donation[donor_name]"
+             required autocomplete="name" placeholder="שם מלא"
+             class="w-full px-4 py-3 rounded-xl border border-gray-200 text-sm
+                    focus:outline-none focus:ring-2 focus:ring-teal-400 focus:border-transparent
+                    transition-shadow">
+    </div>
+
+    <%# ── Display preference ─────────────────────────────────────────────── %>
+    <div class="mb-4">
+      <p class="text-xs font-semibold text-gray-500 mb-2">הצגת שמי ברשימת התורמים</p>
+      <div class="space-y-2">
+        <% [["full_name", "הצג שם מלא"], ["first_name", "הצג שם פרטי בלבד"], ["anonymous", "תרומה אנונימית"]].each_with_index do |(val, label), i| %>
+          <label class="flex items-center gap-2.5 text-sm text-gray-700 cursor-pointer select-none">
+            <input type="radio" name="donation[display_preference]" value="<%= val %>"
+                   <%= "checked" if i.zero? %>
+                   class="w-4 h-4 accent-teal-500 cursor-pointer">
+            <%= label %>
+          </label>
+        <% end %>
+      </div>
+    </div>
+
+    <%# ── Dedication ─────────────────────────────────────────────────────── %>
+    <div class="mb-6">
+      <label class="block text-xs font-semibold text-gray-500 mb-1.5" for="donation-dedication">
+        הקדשה <span class="font-normal text-gray-400">(אופציונלי)</span>
+      </label>
+      <textarea id="donation-dedication" name="donation[dedication]" rows="2"
+                placeholder="לזכר... / לרפואת... / לכבוד..."
+                class="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm resize-none
+                       focus:outline-none focus:ring-2 focus:ring-teal-400 focus:border-transparent
+                       transition-shadow"></textarea>
+    </div>
+
+    <%# ── Submit ─────────────────────────────────────────────────────────── %>
+    <button type="submit"
+            class="w-full py-4 rounded-2xl text-white font-black text-lg shadow-lg
+                   transition-colors duration-200"
+            style="background-color:#ff6b35"
+            onmouseover="this.style.backgroundColor='#e85e2a'"
+            onmouseout="this.style.backgroundColor='#ff6b35'">
+      תרמו עכשיו
+    </button>
+
+    <p class="mt-3 text-[11px] text-gray-400 text-center">🔒 הטופס מאובטח — SSL</p>
+
+  </div>
+
+<% end %>
+
+<%# ── Minimal inline JS: presets + frequency toggle + client validation ──── %>
+<script>
+(function () {
+  var form     = document.getElementById('donation-form-el');
+  var amtInput = document.getElementById('donation-amount');
+  var freqHidden = document.getElementById('freq-value');
+
+  // ── Preset amount buttons ─────────────────────────────────────────────────
+  var presetBtns = document.querySelectorAll('.preset-btn');
+
+  var ACTIVE_PRESET   = ['border-teal-500','bg-teal-50','text-teal-600','ring-1','ring-teal-400/50'];
+  var INACTIVE_PRESET = ['border-gray-200','text-gray-600'];
+
+  function clearPresets() {
+    presetBtns.forEach(function (b) {
+      ACTIVE_PRESET.forEach(function (c) { b.classList.remove(c); });
+      INACTIVE_PRESET.forEach(function (c) { b.classList.add(c); });
+    });
+  }
+
+  function activatePreset(btn) {
+    clearPresets();
+    INACTIVE_PRESET.forEach(function (c) { btn.classList.remove(c); });
+    ACTIVE_PRESET.forEach(function (c) { btn.classList.add(c); });
+  }
+
+  presetBtns.forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      amtInput.value = this.dataset.preset;
+      activatePreset(this);
+    });
+  });
+
+  // Typing a custom amount deselects all presets
+  amtInput.addEventListener('input', clearPresets);
+
+  // ── Frequency toggle ──────────────────────────────────────────────────────
+  var freqBtns = document.querySelectorAll('.freq-btn');
+
+  var ACTIVE_FREQ   = ['bg-white','shadow-sm','font-semibold','text-teal-600'];
+  var INACTIVE_FREQ = ['font-medium','text-gray-500'];
+
+  function activateFreq(btn) {
+    freqBtns.forEach(function (b) {
+      ACTIVE_FREQ.forEach(function (c) { b.classList.remove(c); });
+      INACTIVE_FREQ.forEach(function (c) { b.classList.add(c); });
+    });
+    INACTIVE_FREQ.forEach(function (c) { btn.classList.remove(c); });
+    ACTIVE_FREQ.forEach(function (c) { btn.classList.add(c); });
+    freqHidden.value = btn.dataset.freq;
+  }
+
+  freqBtns.forEach(function (btn) {
+    btn.addEventListener('click', function () { activateFreq(this); });
+  });
+
+  // ── Client-side validation ────────────────────────────────────────────────
+  function flashError(el) {
+    el.classList.add('ring-2','ring-red-400','border-red-400');
+    el.focus();
+    setTimeout(function () {
+      el.classList.remove('ring-2','ring-red-400','border-red-400');
+    }, 3000);
+  }
+
+  form.addEventListener('submit', function (e) {
+    var amt  = parseFloat(amtInput.value);
+    var name = document.getElementById('donation-name').value.trim();
+
+    if (!amt || amt <= 0) { e.preventDefault(); flashError(amtInput); return; }
+    if (!name)            { e.preventDefault(); flashError(document.getElementById('donation-name')); }
+  });
+}());
+</script>

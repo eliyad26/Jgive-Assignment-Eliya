@@ -70,12 +70,22 @@ Re-seed at any time: `ruby bin/rails db:seed` (truncates first).
 |-------|------------------|-------|
 | `GET /` | `campaigns#show` (id: 1) | Root redirects to campaign 1 |
 | `GET /campaigns/:id` | `campaigns#show` | Campaign show page |
-| `POST /campaigns/:id/donations` | `donations#create` | Donation form submit (next task) |
+| `POST /campaigns/:id/donations` | `donations#create` | Creates a `pending` donation; redirects to Donors tab |
 
 **View structure:**
-- `app/views/layouts/application.html.erb` — RTL layout (`lang="he" dir="rtl"`), Heebo font (Google Fonts), Tailwind CDN
-- `app/views/campaigns/show.html.erb` — header strip + three-tab layout (Story / Updates / Donors)
+- `app/views/layouts/application.html.erb` — RTL layout, flash banner, Heebo + Tailwind CDN
+- `app/views/campaigns/show.html.erb` — header strip + two-column layout (sidebar form + tabs)
+- `app/views/donations/_form.html.erb` — donation form card (presets, frequency toggle, name, dedication)
 - `app/views/shared/_empty_state.html.erb` — reusable empty-state component (icon, title, subtitle locals)
+
+**Page layout (desktop vs mobile):**
+
+| Viewport | Form position | Content position |
+|----------|--------------|-----------------|
+| Mobile (`< lg`) | Full-width, between header strip and tabs | Below form |
+| Desktop (`≥ lg`) | Sticky right sidebar (`lg:w-80 xl:w-96`, `sticky top-20`) | Left column (`flex-1`) |
+
+In RTL flex, the first child in a `flex-row` lands on the RIGHT — the form partial is the first DOM child, so it naturally sits on the right on desktop without any extra RTL overrides.
 
 Tab routing is query-param based: `?tab=story` (default) / `?tab=updates` / `?tab=donors`.
 Active tab styling uses a teal underline border; switching is a full page load (no JS required).
@@ -162,6 +172,31 @@ Three visual states across the seed campaigns:
 - **`shared/_empty_state` partial accepts `icon:`, `title:`, `subtitle:` locals** — the `icon:`
   symbol maps to three distinct SVG paths (`:box`, `:bell`, `:users`) so each tab can have a
   contextually appropriate illustration without duplicating markup.
+
+### Task 4: Donation form
+
+- **Amount stored as cents, form submits in shekels** — the form field is `donation[amount_ils]`
+  (integer shekels). `DonationsController#create` converts: `(amount_ils.to_f * 100).round`.
+  This keeps the form human-readable while the model stays in integer cents.
+- **Monthly is pre-selected as the preferred frequency** — JGive emphasises recurring giving.
+  The toggle renders monthly on the RIGHT (start in RTL) with a white card and shadow behind it;
+  one-time is flat. A hidden `donation[frequency]` input carries the value on submit.
+- **No Stimulus controller for the form** — preset amount buttons, frequency toggle, and
+  client-side validation are handled by a single 60-line IIFE in the form partial. This avoids
+  adding `importmap-rails` + `stimulus-rails` gems (both require network access to install).
+  The JS is progressive-enhancement: if disabled, HTML5 `required` on the name field still
+  blocks empty submits, and the server validates `amount_cents > 0`.
+- **`novalidate` on the form** — disables the browser's native validation UI (which looks
+  inconsistent cross-browser) in favour of the custom red-ring flash applied by the JS.
+  Rails server-side validation remains the authoritative guard.
+- **Layout: first DOM child = RIGHT in RTL** — the `<aside>` (form) is the first child in
+  the `flex-row` container; no `order` overrides or `rtl:` variants needed. On mobile
+  (`flex-col`), it renders naturally between the header strip and the tabs.
+- **Sticky sidebar offset** — `sticky top-20` (5 rem = 80 px) clears the `h-14` (56 px)
+  sticky site header plus a small breathing gap. `self-start` prevents the sidebar from
+  stretching to the full column height, which would disable sticky.
+- **Flash messages** — success notice / error alert rendered as a full-width colored banner
+  below the sticky header in `application.html.erb`. No JS auto-dismiss needed for this scope.
 
 ### Wiring in a Real Payment Provider
 
