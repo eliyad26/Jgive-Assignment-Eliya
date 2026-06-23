@@ -67,8 +67,9 @@ same layout structure. Do not burn budget on pixel-perfect CSS.
 
 - **Ruby** 3.2.11 / **Rails** 7.1
 - **Database** SQLite3 (development & test)
-- **JavaScript** — Stimulus + Importmap (no Node, no Webpack) — _to be added in views task_
-- **CSS** — Tailwind CSS via `tailwindcss-rails` — _to be added in views task_
+- **JavaScript** — Stimulus + Importmap (no Node, no Webpack) — _to be added_
+- **CSS** — Tailwind CSS via CDN (dev); swap to `tailwindcss-rails` gem before production
+- **Font** — Heebo via Google Fonts CDN (`app/views/layouts/application.html.erb`)
 
 ## Commands
 

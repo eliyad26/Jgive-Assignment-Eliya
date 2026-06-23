@@ -66,7 +66,39 @@ Re-seed at any time: `ruby bin/rails db:seed` (truncates first).
 
 ### Controllers & views
 
-_(to be filled in — campaign show page and donation form are next)_
+| Route | Controller#Action | Notes |
+|-------|------------------|-------|
+| `GET /` | `campaigns#show` (id: 1) | Root redirects to campaign 1 |
+| `GET /campaigns/:id` | `campaigns#show` | Campaign show page |
+| `POST /campaigns/:id/donations` | `donations#create` | Donation form submit (next task) |
+
+**View structure:**
+- `app/views/layouts/application.html.erb` — RTL layout (`lang="he" dir="rtl"`), Heebo font (Google Fonts), Tailwind CDN
+- `app/views/campaigns/show.html.erb` — campaign header strip + placeholder tab/form sections
+
+**Helpers (`app/helpers/application_helper.rb`):**
+
+| Helper | Purpose |
+|--------|---------|
+| `format_ils(cents)` | Formats integer cents as `₪1,065,630` |
+| `youtube_embed_url(url)` | Converts YouTube watch URL → embed URL |
+| `progress_bar_segments(campaign)` | Returns `{teal:, orange:, goal_marker:}` percentages for the dual-zone bar |
+
+### Progress bar component
+
+The dual-zone bar (`app/views/campaigns/show.html.erb`, `progress_bar_segments` helper) works as follows:
+
+- **Domain** = `bonus_goal_amount_cents` if a bonus goal exists; otherwise `max(goal, raised)`
+- **Teal segment** = progress from 0 → main goal (capped at the goal marker)
+- **Orange segment** = overflow from main goal → raised amount (only appears when raised > goal)
+- **Goal-line divider** = a white hairline at the goal marker position (only shown for dual-goal campaigns)
+
+Three visual states across the seed campaigns:
+| Campaign | Bar appearance |
+|----------|---------------|
+| A (53%, dual-goal) | 21% teal (of 5M domain), no orange |
+| B (65%, single-goal) | 65% teal, no overflow |
+| C (175%, dual-goal) | 33% teal + 25% orange, divider at 33% |
 
 ## Decisions & Trade-offs
 
@@ -81,6 +113,19 @@ _(to be filled in — campaign show page and donation form are next)_
   attachment.
 - **No authentication, no admin UI** — out of scope per brief.
 - **No payment integration in code** — donations are created as `pending` and stay there.
+
+### Task 2: Campaign header strip
+
+- **Tailwind via CDN** — `tailwindcss-rails` gem was scoped out to avoid native-extension
+  build failures on the dev machine (MSYS2 keyring issue). The CDN script is flagged with
+  a comment; swap to the gem before production.
+- **Heebo font via Google Fonts CDN** — same reasoning; works for demo without asset pipeline.
+- **Progress bar is pure HTML+CSS** — no Stimulus controller needed for a static display.
+  When the donation form is wired up, the bar will re-render server-side on each page load.
+  A Stimulus controller for smooth animation would be a polish pass.
+- **RTL achieved via `dir="rtl"` on `<html>`** — Tailwind's RTL utilities (e.g. `rtl:flex-row-reverse`)
+  are not needed; native browser RTL flips flex order automatically.
+- **Media fallback order**: `video_url` (YouTube embed) → `cover_image_url` → teal placeholder.
 
 ### Wiring in a Real Payment Provider
 

@@ -1,0 +1,143 @@
+<% content_for :title, @campaign.title %>
+
+<%# ── Campaign header strip ──────────────────────────────────────────────── %>
+<section class="bg-white border-b border-gray-200 py-8">
+  <div class="max-w-6xl mx-auto px-4">
+
+    <%# Two-column: in RTL flex-row the first child lands on the RIGHT %>
+    <div class="flex flex-col md:flex-row gap-8 items-start">
+
+      <%# ── Media column (RIGHT in RTL) ─────────────────────────────────── %>
+      <div class="w-full md:w-1/2 flex-shrink-0">
+        <% if @campaign.video_url.present? && (embed = youtube_embed_url(@campaign.video_url)) %>
+          <div class="relative rounded-2xl overflow-hidden shadow-xl bg-black" style="padding-top:56.25%">
+            <iframe class="absolute inset-0 w-full h-full"
+                    src="<%= embed %>?rel=0&modestbranding=1"
+                    title="<%= @campaign.title %>"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    allowfullscreen></iframe>
+          </div>
+        <% elsif @campaign.cover_image_url.present? %>
+          <img src="<%= @campaign.cover_image_url %>"
+               alt="<%= @campaign.title %>"
+               class="w-full rounded-2xl shadow-xl object-cover aspect-video">
+        <% else %>
+          <%# Placeholder when no media is set %>
+          <div class="w-full rounded-2xl shadow-xl bg-gradient-to-br from-teal-100 to-teal-50 flex items-center justify-center aspect-video">
+            <svg class="w-20 h-20 text-teal-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                    d="M15 10l4.553-2.276A1 1 0 0121 8.723v6.554a1 1 0
+                       01-1.447.894L15 14M3 8a2 2 0 012-2h10a2 2 0 012 2v8a2
+                       2 0 01-2 2H5a2 2 0 01-2-2V8z"/>
+            </svg>
+          </div>
+        <% end %>
+      </div>
+
+      <%# ── Summary panel (LEFT in RTL) ─────────────────────────────────── %>
+      <div class="flex-1 flex flex-col">
+
+        <%# Title & slogan %>
+        <h1 class="text-3xl md:text-4xl font-black text-gray-900 leading-tight mb-2">
+          <%= @campaign.title %>
+        </h1>
+        <% if @campaign.slogan.present? %>
+          <p class="text-lg text-gray-500 font-medium mb-6"><%= @campaign.slogan %></p>
+        <% end %>
+
+        <%# Amount raised (hero number) %>
+        <div class="mb-1">
+          <span class="text-5xl font-black" style="color:#0da89e">
+            <%= format_ils(@campaign.total_raised_cents) %>
+          </span>
+        </div>
+        <p class="text-sm text-gray-500 mb-1">
+          מתוך יעד של
+          <span class="font-semibold text-gray-700"><%= format_ils(@campaign.goal_amount_cents) %></span>
+        </p>
+        <% if @campaign.has_bonus_goal? %>
+          <p class="text-xs text-gray-400 mb-3">
+            יעד בונוס: <span class="font-semibold"><%= format_ils(@campaign.bonus_goal_amount_cents) %></span>
+          </p>
+        <% end %>
+
+        <%# Donor count %>
+        <p class="text-sm text-gray-600 mb-5">
+          <span class="font-bold text-gray-800"><%= number_with_delimiter(@campaign.donor_count) %></span>
+          תורמים
+        </p>
+
+        <%# ── Dual-zone progress bar ──────────────────────────────────────── %>
+        <% segs = progress_bar_segments(@campaign) %>
+        <div class="mb-4">
+          <%# Bar container — dir:ltr so it fills left→right regardless of page RTL %>
+          <div class="relative h-5 rounded-full bg-gray-200 overflow-hidden" dir="ltr">
+
+            <%# Primary zone: 0 → goal (teal) %>
+            <div class="absolute inset-y-0 left-0 rounded-l-full transition-all duration-700"
+                 style="width:<%= segs[:teal] %>%; background-color:#0da89e"></div>
+
+            <%# Overflow zone: goal → raised (orange) — only when raised > goal %>
+            <% if segs[:orange] > 0 %>
+              <div class="absolute inset-y-0 transition-all duration-700"
+                   style="left:<%= segs[:teal] %>%; width:<%= segs[:orange] %>%; background-color:#ff6b35"></div>
+            <% end %>
+
+            <%# Goal-line divider (visible only when bar has two zones) %>
+            <% if @campaign.has_bonus_goal? && segs[:goal_marker] < 99.5 %>
+              <div class="absolute inset-y-0 w-0.5 bg-white/70 z-10"
+                   style="left:<%= segs[:goal_marker] %>%"></div>
+            <% end %>
+
+          </div>
+
+          <%# Labels below bar %>
+          <div class="flex items-center justify-between mt-1.5 text-xs font-medium" dir="ltr">
+            <span style="color:#0da89e"><%= @campaign.main_progress_percentage %>%</span>
+            <% if segs[:orange] > 0 %>
+              <span style="color:#ff6b35" class="text-xs">
+                גויסו <%= format_ils(@campaign.total_raised_cents - @campaign.goal_amount_cents) %>
+                מעבר ליעד
+              </span>
+            <% end %>
+          </div>
+        </div>
+
+        <%# ── CTA button ──────────────────────────────────────────────────── %>
+        <%= link_to "#donation-form",
+              class: "mt-2 block w-full text-center text-white font-black text-xl
+                      py-4 px-6 rounded-2xl shadow-lg transition-colors duration-200",
+              style: "background-color:#ff6b35",
+              onmouseover: "this.style.backgroundColor='#e85e2a'",
+              onmouseout:  "this.style.backgroundColor='#ff6b35'" do %>
+          תרום עכשיו
+        <% end %>
+
+      </div><%# /summary panel %>
+    </div><%# /two-column %>
+  </div><%# /container %>
+</section>
+
+<%# ── Placeholder sections — filled in subsequent tasks ─────────────────── %>
+<div class="max-w-6xl mx-auto px-4 py-10">
+
+  <%# Tab bar placeholder %>
+  <div class="flex gap-6 border-b border-gray-200 mb-8 text-sm font-medium text-gray-400">
+    <span class="pb-3 border-b-2 border-gray-300 cursor-default">סיפור</span>
+    <span class="pb-3 cursor-default">עדכונים</span>
+    <span class="pb-3 cursor-default">תורמים</span>
+  </div>
+
+  <%# Story preview %>
+  <% if @campaign.story.present? %>
+    <div class="prose max-w-none text-gray-700 leading-relaxed whitespace-pre-line mb-16">
+      <%= @campaign.story %>
+    </div>
+  <% end %>
+
+  <%# Donation form anchor — wired in next task %>
+  <div id="donation-form" class="bg-gray-100 rounded-2xl p-8 text-center text-gray-400">
+    טופס התרומה יוצג כאן
+  </div>
+
+</div>
