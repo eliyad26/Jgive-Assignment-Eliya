@@ -11,7 +11,7 @@ Bundler.require(*Rails.groups)
 
 module JgiveAssignmentEliya
   class Application < Rails::Application
-    config.load_defaults 7.1
+    config.load_defaults 8.1
     config.time_zone = "Jerusalem"
   end
 end
