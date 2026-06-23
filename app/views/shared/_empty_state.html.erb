@@ -1,7 +1,9 @@
 <%# Reusable empty-state component.
     Locals: title (string, required), subtitle (string, optional), icon (symbol :box|:bell|:users, optional) %>
-<% icon  = local_assigns.fetch(:icon, :box) %>
-<% sub   = local_assigns.fetch(:subtitle, nil) %>
+<% icon     = local_assigns.fetch(:icon, :box) %>
+<% sub      = local_assigns.fetch(:subtitle, nil) %>
+<% title_en = local_assigns.fetch(:title_en, nil) %>
+<% sub_en   = local_assigns.fetch(:subtitle_en, nil) %>
 
 <div class="flex flex-col items-center justify-center py-20 text-center">
 
@@ -32,9 +34,15 @@
     <% end %>
   </div>
 
-  <p class="text-gray-500 font-semibold text-base mb-1"><%= title %></p>
+  <p class="text-gray-500 font-semibold text-base mb-1">
+    <span class="lang-he"><%= title %></span>
+    <% if title_en.present? %><span class="lang-en"><%= title_en %></span><% end %>
+  </p>
   <% if sub.present? %>
-    <p class="text-sm text-gray-400 max-w-xs"><%= sub %></p>
+    <p class="text-sm text-gray-400 max-w-xs">
+      <span class="lang-he"><%= sub %></span>
+      <% if sub_en.present? %><span class="lang-en"><%= sub_en %></span><% end %>
+    </p>
   <% end %>
 
 </div>

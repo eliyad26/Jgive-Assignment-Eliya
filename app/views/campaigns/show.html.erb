@@ -22,7 +22,6 @@
                alt="<%= @campaign.title %>"
                class="w-full rounded-2xl shadow-xl object-cover aspect-video">
         <% else %>
-          <%# Placeholder when no media is set %>
           <div class="w-full rounded-2xl shadow-xl bg-gradient-to-br from-teal-100 to-teal-50 flex items-center justify-center aspect-video">
             <svg class="w-20 h-20 text-teal-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
@@ -48,42 +47,43 @@
         <%# Amount raised (hero number) %>
         <div class="mb-1">
           <span class="text-5xl font-black" style="color:#0da89e">
-            <%= format_ils(@campaign.total_raised_cents) %>
+            <%= format_ils_tag(@campaign.total_raised_cents) %>
           </span>
         </div>
         <p class="text-sm text-gray-500 mb-1">
-          מתוך יעד של
-          <span class="font-semibold text-gray-700"><%= format_ils(@campaign.goal_amount_cents) %></span>
+          <span class="lang-he">מתוך יעד של</span><span class="lang-en">of a goal of</span>
+          <span class="font-semibold text-gray-700"><%= format_ils_tag(@campaign.goal_amount_cents) %></span>
         </p>
         <% if @campaign.has_bonus_goal? %>
           <p class="text-xs text-gray-400 mb-3">
-            יעד בונוס: <span class="font-semibold"><%= format_ils(@campaign.bonus_goal_amount_cents) %></span>
+            <span class="lang-he">יעד בונוס:</span><span class="lang-en">Bonus goal:</span>
+            <span class="font-semibold"><%= format_ils_tag(@campaign.bonus_goal_amount_cents) %></span>
           </p>
         <% end %>
 
         <%# Donor count %>
         <p class="text-sm text-gray-600 mb-5">
           <span class="font-bold text-gray-800"><%= number_with_delimiter(@campaign.donor_count) %></span>
-          תורמים
+          <span class="lang-he">תורמים</span><span class="lang-en">donors</span>
         </p>
 
         <%# ── Dual-zone progress bar ──────────────────────────────────────── %>
         <% segs = progress_bar_segments(@campaign) %>
         <div class="mb-4">
-          <%# Bar container — dir:ltr so it fills left→right regardless of page RTL %>
+          <%# dir:ltr so bar fills left→right regardless of page RTL %>
           <div class="relative h-5 rounded-full bg-gray-200 overflow-hidden" dir="ltr">
 
             <%# Primary zone: 0 → goal (teal) %>
             <div class="absolute inset-y-0 left-0 rounded-l-full transition-all duration-700"
                  style="width:<%= segs[:teal] %>%; background-color:#0da89e"></div>
 
-            <%# Overflow zone: goal → raised (orange) — only when raised > goal %>
+            <%# Overflow zone: goal → raised (orange) %>
             <% if segs[:orange] > 0 %>
               <div class="absolute inset-y-0 transition-all duration-700"
                    style="left:<%= segs[:teal] %>%; width:<%= segs[:orange] %>%; background-color:#ff6b35"></div>
             <% end %>
 
-            <%# Goal-line divider (visible only when bar has two zones) %>
+            <%# Goal-line divider %>
             <% if @campaign.has_bonus_goal? && segs[:goal_marker] < 99.5 %>
               <div class="absolute inset-y-0 w-0.5 bg-white/70 z-10"
                    style="left:<%= segs[:goal_marker] %>%"></div>
@@ -96,8 +96,9 @@
             <span style="color:#0da89e"><%= @campaign.main_progress_percentage %>%</span>
             <% if segs[:orange] > 0 %>
               <span style="color:#ff6b35" class="text-xs">
-                גויסו <%= format_ils(@campaign.total_raised_cents - @campaign.goal_amount_cents) %>
-                מעבר ליעד
+                <span class="lang-he">גויסו</span><span class="lang-en">Raised</span>
+                <%= format_ils_tag(@campaign.total_raised_cents - @campaign.goal_amount_cents) %>
+                <span class="lang-he">מעבר ליעד</span><span class="lang-en">beyond goal</span>
               </span>
             <% end %>
           </div>
@@ -107,10 +108,10 @@
         <%= link_to "#donation-form",
               class: "mt-2 block w-full text-center text-white font-black text-xl
                       py-4 px-6 rounded-2xl shadow-lg transition-colors duration-200",
-              style: "background-color:#ff6b35",
-              onmouseover: "this.style.backgroundColor='#e85e2a'",
-              onmouseout:  "this.style.backgroundColor='#ff6b35'" do %>
-          תרום עכשיו
+              style: "background-color:#d426ff",
+              onmouseover: "this.style.backgroundColor='#b800e0'",
+              onmouseout:  "this.style.backgroundColor='#d426ff'" do %>
+          <span class="lang-he">תרום עכשיו</span><span class="lang-en">Donate Now</span>
         <% end %>
 
       </div><%# /summary panel %>
@@ -119,8 +120,6 @@
 </section>
 
 <%# ── Two-column layout: sidebar (form) + main content (tabs) ─────────────── %>
-<%# RTL flex: first child → RIGHT (form), second child → LEFT (tabs)          %>
-<%# Mobile (flex-col): form appears first, between header and tabs             %>
 <div class="max-w-6xl mx-auto px-4 py-8">
   <div class="flex flex-col lg:flex-row items-start gap-8">
 
@@ -144,14 +143,18 @@
         } %>
 
         <%= link_to campaign_path(@campaign, tab: "story"),
-              class: tab_class.call("story") do %>סיפור<% end %>
+              class: tab_class.call("story") do %>
+          <span class="lang-he">סיפור</span><span class="lang-en">Story</span>
+        <% end %>
 
         <%= link_to campaign_path(@campaign, tab: "updates"),
-              class: tab_class.call("updates") do %>עדכונים<% end %>
+              class: tab_class.call("updates") do %>
+          <span class="lang-he">עדכונים</span><span class="lang-en">Updates</span>
+        <% end %>
 
         <%= link_to campaign_path(@campaign, tab: "donors"),
               class: tab_class.call("donors") do %>
-          תורמים
+          <span class="lang-he">תורמים</span><span class="lang-en">Donors</span>
           <span class="mr-1 text-xs font-normal text-gray-400">
             (<%= number_with_delimiter(@campaign.donor_count) %>)
           </span>
@@ -167,16 +170,20 @@
           </div>
         <% else %>
           <%= render "shared/empty_state",
-                title: "הסיפור עדיין לא נכתב",
-                subtitle: "מארגן הקמפיין יוסיף בקרוב." %>
+                title:       "הסיפור עדיין לא נכתב",
+                title_en:    "Story not yet written",
+                subtitle:    "מארגן הקמפיין יוסיף בקרוב.",
+                subtitle_en: "The campaign organizer will add this soon." %>
         <% end %>
 
       <%# ── Updates tab ──────────────────────────────────────────────────── %>
       <% elsif @active_tab == "updates" %>
         <%= render "shared/empty_state",
-              icon: :bell,
-              title: "אין עדכונים עדיין",
-              subtitle: "מארגן הקמפיין יפרסם עדכונים כאן כשיהיו חדשות." %>
+              icon:        :bell,
+              title:       "אין עדכונים עדיין",
+              title_en:    "No updates yet",
+              subtitle:    "מארגן הקמפיין יפרסם עדכונים כאן כשיהיו חדשות.",
+              subtitle_en: "The campaign organizer will post updates here when there is news." %>
 
       <%# ── Donors tab ───────────────────────────────────────────────────── %>
       <% elsif @active_tab == "donors" %>
@@ -184,9 +191,11 @@
         <% donors = @campaign.display_donations %>
         <% if donors.empty? %>
           <%= render "shared/empty_state",
-                icon: :users,
-                title: "היו הראשונים לתרום!",
-                subtitle: "רשימת התורמים תופיע כאן." %>
+                icon:        :users,
+                title:       "היו הראשונים לתרום!",
+                title_en:    "Be the first to donate!",
+                subtitle:    "רשימת התורמים תופיע כאן.",
+                subtitle_en: "The donor list will appear here." %>
         <% else %>
           <div class="space-y-3">
             <% donors.each do |donation| %>
@@ -215,23 +224,26 @@
                     <p class="font-semibold text-gray-900 text-sm truncate">
                       <%= donation.displayed_name %>
                       <% if donation.frequency == "monthly" %>
-                        <span class="text-xs font-normal text-teal-500 mr-1">• חודשי</span>
+                        <span class="text-xs font-normal text-teal-500 mr-1">
+                          <span class="lang-he">• חודשי</span><span class="lang-en">• Monthly</span>
+                        </span>
                       <% end %>
                     </p>
                     <p class="text-xs text-gray-400 mt-0.5">
-                      לפני <%= time_ago_in_words(donation.created_at) %>
+                      <span class="lang-he">לפני <%= time_ago_in_words(donation.created_at) %></span>
+                      <span class="lang-en"><%= I18n.with_locale(:en) { time_ago_in_words(donation.created_at) } %> ago</span>
                     </p>
                   </div>
 
                   <%# Amount + badge %>
                   <div class="flex flex-col items-end gap-1 flex-shrink-0">
                     <span class="font-black text-base" style="color:#0da89e">
-                      <%= format_ils(donation.amount_cents) %>
+                      <%= format_ils_tag(donation.amount_cents) %>
                     </span>
                     <% if donation.pending? %>
                       <span class="text-[10px] font-semibold bg-amber-50 text-amber-600
                                    border border-amber-200 rounded-full px-2 py-0.5 leading-none">
-                        ממתין לאישור
+                        <span class="lang-he">ממתין לאישור</span><span class="lang-en">Pending</span>
                       </span>
                     <% end %>
                   </div>

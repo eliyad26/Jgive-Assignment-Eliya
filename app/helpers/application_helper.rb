@@ -4,6 +4,11 @@ module ApplicationHelper
     "₪#{number_with_delimiter(cents / 100, delimiter: ',')}"
   end
 
+  # Same but wrapped in a <span data-cents="N"> for the JS currency toggle
+  def format_ils_tag(cents)
+    content_tag(:span, format_ils(cents), data: { cents: cents })
+  end
+
   # Convert YouTube watch URL → embed URL
   def youtube_embed_url(video_url)
     return nil if video_url.blank?

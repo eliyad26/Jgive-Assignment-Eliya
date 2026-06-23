@@ -1,7 +1,13 @@
 Donation.delete_all
 Campaign.delete_all
-# Reset SQLite auto-increment so IDs restart at 1 on each seed run
-ActiveRecord::Base.connection.execute("DELETE FROM sqlite_sequence WHERE name IN ('campaigns','donations')")
+# Reset auto-increment so IDs restart at 1 on each seed run (SQLite and PostgreSQL)
+case ActiveRecord::Base.connection.adapter_name
+when /SQLite/i
+  ActiveRecord::Base.connection.execute("DELETE FROM sqlite_sequence WHERE name IN ('campaigns','donations')")
+when /PostgreSQL/i
+  ActiveRecord::Base.connection.execute("SELECT setval('campaigns_id_seq', 1, false)")
+  ActiveRecord::Base.connection.execute("SELECT setval('donations_id_seq', 1, false)")
+end
 
 # ── Campaign A: Scholarship fund, dual-goal, ~53% of main goal ─────────────
 campaign_a = Campaign.create!(

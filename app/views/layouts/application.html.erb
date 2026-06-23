@@ -5,6 +5,13 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title><%= content_for?(:title) ? yield(:title) : "JGive" %></title>
 
+  <%# Favicons %>
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+  <link rel="icon" type="image/png" sizes="48x48" href="/favicon-48x48.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+
   <%# Heebo — designed for Hebrew, weights 300–900 %>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -19,10 +26,12 @@
           fontFamily: { sans: ['Heebo', 'sans-serif'] },
           colors: {
             brand: {
-              teal:   '#0da89e',
-              tealDk: '#0a8f86',
-              orange: '#ff6b35',
+              teal:        '#0da89e',
+              tealDk:      '#0a8f86',
+              orange:      '#ff6b35',
               orangeHover: '#e85e2a',
+              purple:      '#d426ff',
+              purpleHover: '#b800e0',
             }
           }
         }
@@ -31,9 +40,25 @@
   </script>
   <style>
     body { font-family: 'Heebo', sans-serif; }
-    /* Smooth scroll for "donate now" anchor */
     html { scroll-behavior: smooth; }
+    /* Language toggle — English spans hidden by default; shown when html.is-en */
+    .lang-en { display: none; }
+    html.is-en .lang-he { display: none !important; }
+    html.is-en .lang-en { display: inline !important; }
   </style>
+
+  <%# Apply saved language immediately to prevent flash of wrong language %>
+  <script>
+    (function () {
+      var l = localStorage.getItem('jgive-lang') || 'he';
+      if (l === 'en') {
+        var h = document.documentElement;
+        h.classList.add('is-en');
+        h.setAttribute('dir', 'ltr');
+        h.setAttribute('lang', 'en');
+      }
+    }());
+  </script>
 </head>
 <body class="bg-gray-50 text-gray-900 antialiased">
 
@@ -41,10 +66,27 @@
   <header class="bg-white border-b border-gray-200 sticky top-0 z-30 shadow-sm">
     <div class="max-w-6xl mx-auto px-4 h-14 flex items-center justify-between">
       <span class="text-2xl font-black tracking-tight" style="color:#0da89e">jgive</span>
-      <nav class="text-sm text-gray-500 flex gap-6">
-        <a href="#" class="hover:text-gray-800 transition-colors">צור קשר</a>
-        <a href="#" class="hover:text-gray-800 transition-colors">עמדות</a>
-      </nav>
+      <div class="flex items-center gap-4">
+        <nav class="text-sm text-gray-500 flex gap-5">
+          <a href="#" class="hover:text-gray-800 transition-colors">
+            <span class="lang-he">צור קשר</span><span class="lang-en">Contact</span>
+          </a>
+          <a href="#" class="hover:text-gray-800 transition-colors">
+            <span class="lang-he">עמדות</span><span class="lang-en">Campaigns</span>
+          </a>
+        </nav>
+        <div class="h-4 w-px bg-gray-200"></div>
+        <button id="lang-toggle-btn" title="Toggle language"
+                class="px-2.5 py-1 rounded-md border border-gray-200 text-xs font-bold
+                       text-gray-600 hover:border-teal-500 hover:text-teal-600 transition-colors cursor-pointer">
+          EN
+        </button>
+        <button id="currency-toggle-btn" title="Toggle currency"
+                class="px-2.5 py-1 rounded-md border border-gray-200 text-xs font-bold
+                       text-gray-600 hover:border-teal-500 hover:text-teal-600 transition-colors cursor-pointer">
+          USD $
+        </button>
+      </div>
     </div>
   </header>
 
@@ -75,6 +117,87 @@
       }, 5000);
     </script>
   <% end %>
+
+  <%# ── Language & Currency toggles ─────────────────────────────────────────
+      Runs after yield so all [data-cents] elements are in the DOM.           %>
+  <script>
+  (function () {
+    'use strict';
+
+    // ── Language toggle ──────────────────────────────────────────────────────
+    var html = document.documentElement;
+    var lang = localStorage.getItem('jgive-lang') || 'he';
+
+    function setLang(l) {
+      lang = l;
+      localStorage.setItem('jgive-lang', l);
+      if (l === 'en') {
+        html.classList.add('is-en');
+        html.setAttribute('dir', 'ltr');
+        html.setAttribute('lang', 'en');
+      } else {
+        html.classList.remove('is-en');
+        html.setAttribute('dir', 'rtl');
+        html.setAttribute('lang', 'he');
+      }
+      var btn = document.getElementById('lang-toggle-btn');
+      if (btn) btn.textContent = l === 'he' ? 'EN' : 'HE';
+    }
+
+    var langBtn = document.getElementById('lang-toggle-btn');
+    if (langBtn) {
+      langBtn.textContent = lang === 'he' ? 'EN' : 'HE';
+      langBtn.addEventListener('click', function () { setLang(lang === 'he' ? 'en' : 'he'); });
+    }
+
+    // ── Currency toggle ──────────────────────────────────────────────────────
+    var currency = localStorage.getItem('jgive-currency') || 'ILS';
+    var usdRate  = parseFloat(localStorage.getItem('jgive-usd-rate')) || null;
+
+    function fmtILS(cents) {
+      return '₪' + Math.round(cents / 100).toLocaleString('en-US');
+    }
+
+    function fmtUSD(cents) {
+      return '$' + Math.round((cents / 100) * usdRate).toLocaleString('en-US');
+    }
+
+    function refreshAmounts() {
+      document.querySelectorAll('[data-cents]').forEach(function (el) {
+        var cents = parseInt(el.dataset.cents, 10);
+        el.textContent = (currency === 'USD' && usdRate) ? fmtUSD(cents) : fmtILS(cents);
+      });
+      var btn = document.getElementById('currency-toggle-btn');
+      if (btn) btn.textContent = currency === 'ILS' ? 'USD $' : 'ILS ₪';
+    }
+
+    function setCurrency(c) {
+      currency = c;
+      localStorage.setItem('jgive-currency', c);
+      refreshAmounts();
+    }
+
+    // Fetch live ILS→USD rate — frankfurter.app is free with no API key
+    fetch('https://api.frankfurter.app/latest?from=ILS&to=USD')
+      .then(function (r) { return r.json(); })
+      .then(function (data) {
+        usdRate = data.rates.USD;
+        localStorage.setItem('jgive-usd-rate', String(usdRate));
+        if (currency === 'USD') refreshAmounts();
+      })
+      .catch(function () { /* silently fall back to ILS if network fails */ });
+
+    var currBtn = document.getElementById('currency-toggle-btn');
+    if (currBtn) {
+      currBtn.textContent = currency === 'ILS' ? 'USD $' : 'ILS ₪';
+      currBtn.addEventListener('click', function () { setCurrency(currency === 'ILS' ? 'USD' : 'ILS'); });
+    }
+
+    // Apply cached rate immediately if available
+    if (currency === 'USD' && usdRate) refreshAmounts();
+
+  }());
+  </script>
 
 </body>
 </html>
