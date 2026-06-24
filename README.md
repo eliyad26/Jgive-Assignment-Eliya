@@ -1,34 +1,32 @@
 # JGive Assignment — Eliya Duek
 
 A fundraising campaign clone inspired by [JGive](https://www.jgive.com/new/he/ils/donation-targets/159183).
-Built with Ruby on Rails 8.1, SQLite3, Hebrew RTL layout, Tailwind CSS via CDN, and Heebo font.
+Built with Ruby on Rails 8.1, SQLite3 (dev) / PostgreSQL (Render), Hebrew RTL layout, Tailwind CSS via CDN, and Heebo font.
 
 ---
 
-## 1. Setup
+## 1. Running Locally
 
 **Prerequisites:** Ruby 3.2.x, Bundler (`gem install bundler`)
 
 ```bash
-# 1. Install gems (requires internet access)
-gem install rails --no-document
+# 1. Install gems
 bundle install
 
 # 2. Create and migrate the database
 ruby bin/rails db:create db:migrate
 
-# 3. Seed the three demo campaigns
+# 3. Seed the four demo campaigns
 ruby bin/rails db:seed
 
-# 4. Start the development server
+# 4. Start the server
 ruby bin/rails server
 # → http://localhost:3000
 ```
 
-> **Windows note:** prefix all `bin/rails` commands with `ruby`
-> (e.g. `ruby bin/rails …`), or use `bundle exec rails …` after `bundle install`.
+> **Windows:** prefix all `bin/rails` commands with `ruby` (e.g. `ruby bin/rails …`).
 
-To **re-seed** (truncates all existing campaigns and donations):
+To **re-seed** (truncates all existing data):
 
 ```bash
 ruby bin/rails db:seed
@@ -36,17 +34,16 @@ ruby bin/rails db:seed
 
 ---
 
-## 2. The Three Seed Campaigns
+## 2. Seed Campaigns
 
-Three campaigns are seeded to demonstrate every progress-bar state:
+Four campaigns are seeded to demonstrate every progress-bar state:
 
-| # | Campaign | Goal | Bonus goal | Raised | State |
-|---|----------|------|-----------|--------|-------|
-| 1 | קרן מלגות לסטודנטים מצטיינים | ₪2,000,000 | ₪5,000,000 | ₪1,065,630 | ~53% — single teal bar (below goal) |
-| 2 | בנק המזון ירושלים | ₪750,000 | — (single-goal) | ₪487,500 | 65% — single-goal teal bar |
-| 3 | רכישת ציוד רפואי לבית חולים שיבא | ₪1,000,000 | ₪3,000,000 | ₪1,750,000 | 175% — teal + orange overflow |
-
-Visit `/campaigns/1`, `/campaigns/2`, `/campaigns/3` (or set the root to any of them in `config/routes.rb`).
+| # | Campaign | Goal | Bonus goal | Raised | Bar state |
+|---|----------|------|-----------|--------|-----------|
+| 1 | קרן מלגות לסטודנטים מצטיינים | ₪2,000,000 | ₪5,000,000 | ~₪1.07M | ~53% — purple fill, below main goal |
+| 2 | בנק המזון ירושלים | ₪750,000 | — | ~₪487K | 65% — single green bar |
+| 3 | רכישת ציוד רפואי לבית חולים שיבא | ₪1,000,000 | ₪3,000,000 | ~₪1.75M | 175% — purple past main goal |
+| 4 | הגן הכתום — לזכר בני משפחת ביבס | ₪2,000,000 | ₪3,000,000 | ~₪1.08M | ~54% — purple fill |
 
 ---
 
@@ -54,215 +51,135 @@ Visit `/campaigns/1`, `/campaigns/2`, `/campaigns/3` (or set the root to any of 
 
 ### Models
 
-| Model | Table | Key columns |
-|-------|-------|-------------|
-| `Campaign` | `campaigns` | `title`, `description`, `story`, `goal_amount_cents`, `bonus_goal_amount_cents` (nil = single-goal), `currency`, `cover_image_url`, `video_url` |
-| `Donation` | `donations` | `campaign_id`, `amount_cents`, `status` (pending/paid/failed), `frequency` (one_time/monthly), `display_preference` (full_name/first_name/anonymous), `donor_name`, `dedication` |
+| Model | Key columns |
+|-------|-------------|
+| `Campaign` | `title`, `slogan`, `description`, `story`, `goal_amount_cents`, `bonus_goal_amount_cents` (nil = single-goal), `cover_image_url`, `video_url` |
+| `Donation` | `campaign_id`, `amount_cents`, `status` (pending/paid/failed), `frequency` (one_time/monthly), `display_preference`, `donor_name`, `dedication` |
 
-**Campaign computed methods:**
+**Campaign computed methods:** `total_raised_cents`, `donor_count`, `main_progress_percentage`, `has_bonus_goal?`, `display_donations`
 
-| Method | Returns |
-|--------|---------|
-| `total_raised_cents` | Sum of `pending` + `paid` donations (failed excluded) |
-| `donor_count` | Count of non-failed donations |
-| `main_progress_percentage` | Integer %, uncapped (can exceed 100 for overflow) |
-| `has_bonus_goal?` | `true` when `bonus_goal_amount_cents` is present |
-| `display_donations` | Non-failed donations, newest first |
+### Controllers & Routes
 
-**Donation computed methods:**
-
-| Method | Returns |
-|--------|---------|
-| `displayed_name` | Respects `display_preference`: full name / first token / "תורם/ת אנונימי/ת" |
-
-### Controllers
-
-| Route | Controller#Action | Notes |
-|-------|------------------|-------|
-| `GET /` | `campaigns#show` (id: 1) | Root defaults to campaign 1 |
-| `GET /campaigns/:id` | `campaigns#show` | Campaign show page |
-| `POST /campaigns/:id/donations` | `donations#create` | Creates a `pending` donation; redirects to Donors tab on success |
-
-**`CampaignsController#show`**  
-Sets `@campaign`, `@active_tab` (whitelist-guarded, defaults to `"story"`), and `@donation ||= build(frequency: "monthly")`. The `||=` is intentional — on a failed donation save, `DonationsController#create` re-renders `campaigns/show` with `@donation` already set (carrying validation errors), so `CampaignsController#show` must not overwrite it.
-
-**`DonationsController#create`**  
-Converts the form's `donation[amount_ils]` (shekels) to cents: `(amount_ils.to_f * 100).round`. On success, redirects to `?tab=donors#donors-list`. On failure, re-renders `campaigns/show` at HTTP 422 with `@donation` bearing `.errors`.
+| Route | Action | Notes |
+|-------|--------|-------|
+| `GET /` | `campaigns#index` | Card grid of all campaigns |
+| `GET /campaigns/:id` | `campaigns#show` | Campaign page with tabs |
+| `POST /campaigns/:id/donations` | `donations#create` | Creates a `pending` donation |
 
 ### Views
 
 | File | Purpose |
 |------|---------|
-| `app/views/layouts/application.html.erb` | `lang="he" dir="rtl"` HTML root, Heebo + Tailwind CDN, sticky site header, flash banner with auto-dismiss |
-| `app/views/campaigns/show.html.erb` | Campaign header strip, dual-zone progress bar, two-column layout (form sidebar + tabs) |
-| `app/views/donations/_form.html.erb` | Donation form card: frequency toggle, preset grid, name/dedication fields, client-side validation (inline IIFE JS) |
-| `app/views/shared/_empty_state.html.erb` | Reusable empty-state (accepts `icon:`, `title:`, `subtitle:` locals; icons: `:box`, `:bell`, `:users`) |
+| `layouts/application.html.erb` | `lang="he" dir="rtl"` root, Heebo + Tailwind CDN, sticky header, language toggle, currency toggle |
+| `campaigns/index.html.erb` | 2-column card grid; each card links to the campaign show page |
+| `campaigns/show.html.erb` | Full-width click-to-play hero video, progress bar, tab navigation (Story / Updates / Donors), donation modal trigger |
+| `donations/_form.html.erb` | Frequency toggle, preset grid, amount input, name/dedication fields |
+| `shared/_empty_state.html.erb` | Reusable empty state (Story, Updates, Donors tabs) |
 
 ### Helpers (`app/helpers/application_helper.rb`)
 
 | Helper | Purpose |
 |--------|---------|
-| `format_ils(cents)` | Formats integer cents → `₪1,065,630` |
-| `youtube_embed_url(url)` | Converts YouTube watch URL → `/embed/ID` |
-| `progress_bar_segments(campaign)` | Returns `{ teal:, orange:, goal_marker: }` percentages for the dual-zone bar |
+| `format_ils(cents)` | `₪1,065,630` |
+| `youtube_embed_url(url)` | Converts watch URL → `/embed/ID` |
+| `progress_bar_segments(campaign)` | Returns `{ type:, purple:, green_right:, heart_left: }` for dual-goal or `{ type:, fill: }` for single |
 
-### Stimulus / JavaScript
+### Client-side JavaScript
 
-No Stimulus controllers are installed. All client-side interactivity is a single inline IIFE inside `donations/_form.html.erb` (~60 lines):
-- Preset amount buttons: clicking one sets the hidden input and applies active styling
-- Frequency toggle: flips white-card style between monthly / one-time
-- Client-side validation: red ring + inline message on missing name or zero amount, `e.preventDefault()` before server round-trip
+All JS is inline (no Stimulus / Node / Webpack):
 
-Tab switching (Story / Updates / Donors) is server-rendered via `?tab=` query param — no JS needed.
+- **Donation modal** — `openDonationModal()` / `closeDonationModal()` triggered by the CTA button; auto-opens if a validation error is returned from the server.
+- **Click-to-play hero** — thumbnail shown first; click captures the container height and replaces `innerHTML` with an autoplay iframe at the same pixel height.
+- **Preset amount buttons** — toggle active state and populate the amount input.
+- **Language toggle** — `localStorage`-persisted `is-en` class on `<html>`; FOUC-free inline head script.
+- **Currency toggle** — fetches a live USD/ILS rate from frankfurter.app (cached 24 h in `localStorage`); swaps all `data-cents` spans between ₪ and $.
 
 ---
 
 ## 4. Progress Bar
 
-The dual-zone bar is rendered in `app/views/campaigns/show.html.erb` using the `progress_bar_segments` helper.
+**Domain:** `bonus_goal_amount_cents` if present; otherwise `goal_amount_cents`.
 
-**Domain:** `bonus_goal_amount_cents` (if present); otherwise `max(goal, raised)`.
+The bar uses `dir="ltr"` inside an RTL page so CSS `left:`/`width:` fills left-to-right.
 
 | Segment | Color | Covers |
 |---------|-------|--------|
-| Teal | `#0da89e` | 0 → main goal (capped at goal marker) |
-| Orange | `#ff6b35` | Main goal → raised amount (only when raised > goal) |
-| White hairline divider | `rgba(255,255,255,0.7)` | At the goal-marker position (dual-goal campaigns only) |
+| Purple | `#d426ff` | 0 → raised amount (capped at 100%) |
+| Green | `#008043` | Main-goal threshold → right edge |
+| Orange heart `♥` | `#f59e0b` | Floats at the left edge of the green zone (= main goal threshold) |
 
-The bar container uses `dir="ltr"` so CSS `left:`/`width:` fill left-to-right regardless of the page-level `dir="rtl"`.
-
-**Three visual states across seed campaigns:**
-
-| Campaign | Bar |
-|----------|-----|
-| A — 53%, dual-goal | ~21% teal (of 5M domain), no orange segment |
-| B — 65%, single-goal | 65% teal, no overflow |
-| C — 175%, dual-goal | ~33% teal + ~25% orange, white divider at 33% |
+Single-goal campaigns show a simple green fill (no heart).
 
 ---
 
-## 5. Visual Reference
+## 5. Payment Provider Wiring
 
-Target: [https://www.jgive.com/new/he/ils/donation-targets/159183](https://www.jgive.com/new/he/ils/donation-targets/159183)
-
-**Matched elements:**
-- Hebrew RTL layout (`lang="he" dir="rtl"`)
-- Heebo font (Google Fonts CDN), weights 300–900
-- Teal brand color `#0da89e` (header text, progress bar, tab underline, active preset ring)
-- Purple CTA buttons `#d426ff` (hover `#b800e0`) — "תרום עכשיו" in the header and the form submit
-- Dual-zone progress bar: teal (main progress) + orange overflow when raised exceeds goal
-- Tab bar: Story / Updates / Donors with teal active underline
-- Sticky donation form sidebar (desktop right; mobile full-width above tabs)
-- 3×2 preset amount grid
-- Frequency toggle (monthly / one-time) with white-card active state
-- Donor list with masking (first name only / anonymous), pending badge, Hebrew relative timestamps
-
-**Intentional divergences (scope):**
-- No user authentication / login wall
-- No admin panel or campaign editing UI
-- No email receipts
-- No Action Text / rich-text story editor (story is plain text)
-- Tailwind via CDN (not gem) — swap to `tailwindcss-rails` before production
-
----
-
-## 6. Payment Provider Wiring
-
-Donations are created with `status: :pending` and stay there in this implementation. Here is how a real provider would be wired in:
+Donations are created with `status: :pending` and stay there in this implementation.
 
 ### Stripe Checkout (recommended for international)
 
-1. **Create a Checkout Session** (`DonationsController#create`)
-   - Persist the donation with `status: :pending`.
-   - Call `Stripe::Checkout::Session.create(...)`, passing `donation.id` as `metadata[:donation_id]`.
-   - Redirect the donor to `session.url`.
-
-2. **Receive the webhook** (new `WebhooksController`)
-   - Stripe POSTs `checkout.session.completed` to `/webhooks/stripe`.
-   - Verify the signature: `Stripe::Webhook.construct_event(payload, sig_header, secret)`.
-   - Find the donation via `metadata[:donation_id]`, call `donation.update!(status: :paid)`.
-   - Return HTTP 200.
-
-3. **Handle the success redirect**
-   - The donor returns to `success_url` (e.g. `/campaigns/1?donation=123`).
-   - Because the webhook may arrive before the redirect, reload the record and show
-     "payment confirmed" or "payment processing" accordingly.
-
-4. **Failed / expired payments**
-   - Handle `checkout.session.expired` by setting `status: :failed`.
-   - The progress bar already excludes failed donations from `total_raised_cents`.
+1. **`DonationsController#create`** — persist the donation (`status: :pending`), call `Stripe::Checkout::Session.create(...)` with `metadata[:donation_id]`, redirect donor to `session.url`.
+2. **New `WebhooksController`** — verify the signature with `Stripe::Webhook.construct_event`, find the donation, call `donation.update!(status: :paid)`.
+3. **Success redirect** — donor returns to `?donation=123`; reload the record and show "confirmed" or "processing" based on whether the webhook beat the redirect.
+4. **Expired / failed** — handle `checkout.session.expired` by setting `status: :failed`; the progress bar already excludes failed donations from `total_raised_cents`.
 
 ### Israeli equivalents (Tranzila / Meshulam / PayPlus)
 
-These providers use a **hosted payment page + callback URL** pattern instead of webhooks:
-
-1. Redirect donor to the provider's hosted page with a signed request.
-2. Provider redirects back to your callback URL with a transaction token.
-3. Verify the token via the provider's API.
-4. On success, call `donation.update!(status: :paid)`.
-
-The model change is identical (`pending → paid`); only the HTTP flow differs.
+These use a **hosted page + callback URL** pattern: redirect → provider page → callback with a transaction token → verify via API → `donation.update!(status: :paid)`. The model change is identical; only the HTTP flow differs.
 
 ---
 
-## 7. Decisions & Trade-offs
+## 6. Key Decisions & Trade-offs
 
-### Task 1 — Data layer
+### Data layer
 
-- **Integer cents for amounts** — avoids floating-point rounding errors. All display formatting (`₪1,065,630`) is done in `format_ils` helper / views.
-- **String-valued enums** (`status`, `frequency`, `display_preference`) — readable in the SQLite file without a lookup table; easier to inspect in `rails console`.
-- **`story` as plain `text` column** — Action Text / Trix editor scoped out; the column can later be replaced with an Action Text attachment without a model migration.
-- **No authentication, no admin UI** — out of scope per brief.
+- **Integer cents** — avoids floating-point rounding. All display formatting is in the `format_ils` helper.
+- **String enums** (`status`, `frequency`, `display_preference`) — readable in the SQLite file and in `rails console` without a lookup table.
+- **`story` as plain `text` column** — Action Text scoped out; the column can later be swapped for an Action Text attachment without a model migration.
 
-### Task 2 — Campaign header strip
+### Progress bar design
 
-- **Tailwind via CDN** — `tailwindcss-rails` gem requires MSYS2 native build (failed on the dev machine). The CDN `<script>` tag is flagged with a comment; swap to the gem before production.
-- **Heebo via Google Fonts CDN** — same reasoning as Tailwind.
-- **Progress bar in pure HTML+CSS** — no Stimulus controller; the bar re-renders server-side on each page load, which is sufficient given that donations are submitted via a full form POST.
-- **RTL via `dir="rtl"` on `<html>`** — browser native RTL flips flex order automatically; no `rtl:` Tailwind variants or `order` overrides needed.
+- **Purple from left, green from right** — mirrors the JGive reference. Domain is the bonus goal when present, so overflow (raised > main goal) naturally extends the purple into the green zone without special-casing.
+- **Heart at main-goal threshold** — `heart_left = 100 - green_right`, so it always marks the main goal regardless of how much has been raised.
 
-### Task 3 — Donors tab
+### Hero video
 
-- **Pending donations are visible in the list** — shown with an amber "ממתין לאישור" badge. Consistent with `total_raised_cents` already counting pending donations toward the progress bar.
-- **Anonymous avatar is a silhouette SVG** — avoids showing a letter initial that could hint at the donor's identity.
-- **Hebrew `time_ago_in_words` without `rails-i18n` gem** — `config/locales/he.yml` provides only the `datetime.distance_in_words` keys needed. Avoids a network-dependent `bundle install`.
-- **Server-rendered tabs** — `?tab=<name>` query param; no Stimulus required. Acceptable for a read-heavy page within 4–6 h scope.
+- **Click-to-play thumbnail** — avoids auto-loading a YouTube iframe (which blocks page render and is a privacy risk). The thumbnail height is captured before replacing `innerHTML` so the iframe renders at the exact same pixel size.
+- **`cover_image_url` preferred over YouTube auto-thumbnail** — campaigns can supply their own cover image; YouTube thumbnail is only a fallback.
 
-### Task 4 — Donation form
+### Donation modal
 
-- **Amount stored as cents, form submits in shekels** — form field is `donation[amount_ils]`; controller converts: `(amount_ils.to_f * 100).round`. Human-readable form, integer model.
-- **Monthly pre-selected** — JGive emphasises recurring giving; matches the reference UI.
-- **Inline IIFE JS instead of Stimulus** — avoids adding `importmap-rails` + `stimulus-rails` gems (both require network access). The JS is progressive-enhancement: HTML5 `required` and server-side validation remain the authority.
-- **`novalidate` on the form** — disables inconsistent native browser validation UI in favour of the custom red-ring styling applied by the JS.
+- **Modal instead of a persistent sidebar** — cleans up mobile layout and matches how the reference site behaves at smaller breakpoints. Opens on CTA click; auto-opens if the form returns validation errors.
+- **No Stimulus** — the modal open/close, preset buttons, and click-to-play are all inline IIFEs. Avoids adding `importmap-rails` + `stimulus-rails` gems (both require network access during `bundle install` and a build step).
 
-### Task 5 — Controller flow
+### Tailwind via CDN
 
-- **`@donation ||= build(...)` in `CampaignsController#show`** — the `||=` prevents overwriting the error-bearing `@donation` set by `DonationsController#create` on a failed save, enabling pre-fill and inline errors.
-- **Redirect to `?tab=donors#donors-list` on success** — the donor sees their new pending entry immediately in the list, anchored so the browser scrolls past the sidebar.
-- **Progress bar auto-updates** — `total_raised_cents` already sums pending + paid, so the header strip reflects the new donation the moment the page re-renders. No extra wiring.
+- `tailwindcss-rails` requires native-compiled binaries (MSYS2 on Windows) and a Node-backed build step. CDN works out of the box and is sufficient for a scope-limited assignment. Flagged for production swap.
+
+### Server-rendered tabs
+
+- `?tab=<name>` query param; no JS needed. The read-heavy show page doesn't benefit from client-side tab switching within this scope.
+
+### Pending donations count toward progress
+
+- `total_raised_cents` sums both `pending` and `paid` donations. Pending donations appear with an amber "ממתין לאישור" badge in the Donors tab. This matches JGive's behaviour (campaigns show momentum before payment clears).
 
 ---
 
-## 8. Seed Data Details
+## 7. What I'd Do With More Time
 
-Seed file: `db/seeds.rb`
+1. **Real payment integration** — Stripe Checkout webhook flow as described in §5. Add a `StripeWebhookJob` (Active Job + Sidekiq) so webhook processing is async and idempotent.
 
-SQLite sequences are reset at the start of each seed run so IDs remain stable across re-seeds:
+2. **Stimulus controllers** — replace inline IIFEs with named `tabs_controller`, `progress_bar_controller`, and `modal_controller` for testability and reuse across campaigns.
 
-```ruby
-ActiveRecord::Base.connection.execute(
-  "DELETE FROM sqlite_sequence WHERE name IN ('campaigns','donations')"
-)
-```
+3. **Tailwind CSS gem** — replace the CDN `<script>` with `tailwindcss-rails` for a purged, production-optimised stylesheet and proper custom-colour support without the CDN scan overhead.
 
-| Campaign | Donations | Mix |
-|----------|-----------|-----|
-| A — קרן מלגות | 14 | 12 paid + 2 pending; spread over past 90 days |
-| B — בנק המזון | 6 | 5 paid + 1 pending; spread over past 60 days |
-| C — ציוד רפואי | 22 | All paid; spread over past 120 days |
+4. **Campaign admin** — a minimal Administrate or custom CRUD so non-developers can create campaigns and upload cover images (Active Storage + S3) without touching seeds.
 
-`created_at` timestamps are spread across the look-back window so Hebrew relative timestamps
-(`time_ago_in_words`) display varied values ("לפני 3 ימים", "לפני חודש", etc.) across the Donors tab.
+5. **Tests** — model unit tests for `total_raised_cents`, `progress_bar_segments`, and `displayed_name`; system tests (Capybara) for the donation modal flow and tab switching.
 
-Display preferences in seed data cover all three options (full name / first name / anonymous)
-so the masking logic can be verified immediately after seeding.
+6. **i18n via `rails-i18n`** — replace the hand-rolled `config/locales/he.yml` with the full gem so `number_to_currency`, form error messages, and `time_ago_in_words` all localise automatically.
+
+7. **Accessible markup** — `aria-modal`, `aria-labelledby`, focus trap inside the donation modal, and keyboard-navigable preset grid.
+
+8. **Rate-limit donation submissions** — Rack::Attack rule keyed on IP to prevent abuse before a real payment gate is in place.
