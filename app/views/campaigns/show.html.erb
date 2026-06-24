@@ -6,13 +6,17 @@
      : nil %>
 <% if yt_id %>
   <% embed_url = "https://www.youtube.com/embed/#{yt_id}" %>
-  <%# Container: fixed height captured by JS before iframe swap %>
+  <%# cover_image_url takes priority over the auto-generated YouTube thumbnail %>
+  <% thumb_src = @campaign.cover_image_url.present? \
+       ? @campaign.cover_image_url \
+       : "https://img.youtube.com/vi/#{yt_id}/maxresdefault.jpg" %>
   <div id="hero-wrap"
        class="relative w-full bg-black overflow-hidden cursor-pointer select-none"
        onclick="playHeroVideo(this,'<%= j embed_url %>')">
-    <%# Thumbnail — maxresdefault with hqdefault fallback %>
-    <img src="https://img.youtube.com/vi/<%= yt_id %>/maxresdefault.jpg"
-         onerror="this.src='https://img.youtube.com/vi/<%= yt_id %>/hqdefault.jpg'"
+    <img src="<%= thumb_src %>"
+         <% unless @campaign.cover_image_url.present? %>
+           onerror="this.src='https://img.youtube.com/vi/<%= yt_id %>/hqdefault.jpg'"
+         <% end %>
          alt="<%= @campaign.title %>"
          class="w-full block"
          style="max-height:420px;object-fit:cover">

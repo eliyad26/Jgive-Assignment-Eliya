@@ -25,13 +25,13 @@
 
         <%# Cover image / thumbnail %>
         <div class="relative overflow-hidden" style="height:220px">
-          <% if campaign.cover_image_url.present? %>
-            <img src="<%= campaign.cover_image_url %>"
-                 alt="<%= campaign.title %>"
-                 class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300">
-          <% elsif yt_id %>
-            <img src="https://img.youtube.com/vi/<%= yt_id %>/maxresdefault.jpg"
-                 onerror="this.src='https://img.youtube.com/vi/<%= yt_id %>/hqdefault.jpg'"
+          <% card_img = campaign.cover_image_url.presence \
+               || (yt_id ? "https://img.youtube.com/vi/#{yt_id}/maxresdefault.jpg" : nil) %>
+          <% if card_img %>
+            <img src="<%= card_img %>"
+                 <% if campaign.cover_image_url.blank? && yt_id %>
+                   onerror="this.src='https://img.youtube.com/vi/<%= yt_id %>/hqdefault.jpg'"
+                 <% end %>
                  alt="<%= campaign.title %>"
                  class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300">
           <% else %>
