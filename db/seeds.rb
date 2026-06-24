@@ -122,7 +122,102 @@ campaign_c = Campaign.create!(
 # Verify totals:
 # 250+100+80+200+50+120+75+60+40+90+30+110+45+25+70+35+85+55+65+95+50+20 = 1,750K ILS → 175%
 
+# ── Campaign D: הגן הכתום — dual-goal, ~53% of main goal ──────────────────
+campaign_d = Campaign.create!(
+  title:                   "לזכר בני משפחת ביבס",
+  slogan:                  "הצטרפו עכשיו והיו ממקימי ׳הגן הכתום׳",
+  story:                   <<~STORY,
+    על הפרויקט
+    הצטרפו עכשיו והיו ממקימי ׳הגן הכתום׳
+
+    לזכר שירי, אריאל וכפיר ביבס,
+    ולזכר כל ילדי ה-7 באוקטובר.
+    אחרי שנתיים וחצי של כאב, טלטלה והתמודדות,
+    מגיע מיזם שמביא בשורה חדשה לישראל -
+    מקום של חיים, ריפוי ותקווה.
+    אנחנו יוצאים לדרך עם הקמת הגן הכתום -
+    מרחב ראשון מסוגו בישראל שמחבר זיכרון, טבע ילדים וריפוי.
+    על פני 20 דונם יוקם מרחב חי של טבע, מים, משחק, משפחה וריפוי - פתוח לכולם.
+    מקום שבו ילדים ירוצו וישחקו,
+    משפחות יתכנסו יחד,
+    ואנשים יוכלו לעצור לרגע, לנשום ולהתחבר מחדש.
+    מקום שיכלול גם מרחב מכבד לזכר כל ילדי השבעה באוקטובר -
+    כדי לזכור דרך החיים, האור והאהבה.
+    למען כל ילדי ישראל 🧡
+    למען התיקון של כולנו.
+
+    מה יחכה לנו בגן הכתום?
+    הגן הכתום מוקם במגדל העמק, סמוך לגני הילדים "אריאל" ו"כפיר" הנבנים בימים אלה.
+
+    🌿 מתחם גינון טיפולי-קהילתי
+    מרחב ריפוי דרך הטבע והאדמה עבור הלומי קרב, בני הגיל השלישי, אנשים עם צרכים מיוחדים, נוער בסיכון וקהילות הזקוקות לצמיחה מחדש.
+
+    🍊 בוסתני פרי ומטעים
+    הליכה בין עצי פרי, ריחות וצמחייה, בהשראת הפירות ששירי ואריאל אהבו.
+
+    💧 הנחל האקולוגי
+    נחל זורם המלווה את המבקרים לאורך הגן, עם גשרי עץ קטנים, מים חיים וחוויית הליכה מרגיעה.
+
+    🌱 מרחב זיכרון לכל ילדי השבעה באוקטובר
+    פינה מכבדת ומלאת אור, לזכר הילדים שנלקחו מעולמנו.
+
+    🧡 האומגה הכתומה ומתקני המשחק
+    כי צחוק של ילדים הוא התשובה הכי חזקה לכאב.
+
+    🌟 קיר המשאלות
+    מקום שבו כל ילד וילדה בישראל יוכלו להשאיר משאלה, תפילה, תקווה או חלום.
+
+    👨‍👩‍👧 מרחבי פיקניק משפחתיים
+    פינות מפגש ירוקות ומזמינות, ליצירת זיכרונות חדשים תחת כיפת השמיים.
+
+    🎭 אמפיתיאטרון, כיתות חוץ ומרחבי תרבות
+    מקום למפגשים, הופעות, פעילות חינוכית וקהילתית.
+
+    📚 ספריית חוץ ומרחב השראה
+    פינות ישיבה מוצלות עם ספרי ילדים, שולחנות יצירה ומקום לדמיון לצמוח.
+
+    זהו פרויקט לאומי של אהבה, אחריות ותקווה.
+    ההזדמנות שלנו להשאיר חותם לדורות.
+
+    עיריית מגדל העמק העניקה את הקרקע והתחייבה לתחזוקה שוטפת.
+    התוכניות מוכנות. עכשיו אנחנו צריכים אתכם.
+
+    ״ראינו את התכניות של הגן, ופשוט התחלנו לבכות״
+    כשעופרי ביבס ראתה לראשונה את התוכנית של הגן, היא לא הצליחה לעצור את הדמעות.
+
+    עמותת וְנָטַעְתָּ, מובילת הפרויקט, היא תנועה לאומית-סביבתית לריפוי החברה הישראלית דרך הטבע וחיבור לאדמה.
+    העמותה זוכת Israel Earth Prize לשנת 2023.
+    פרויקט ׳הגן הכתום׳ מתקיים בשיתוף פעולה מלא עם עיריית מגדל העמק ומשפחת ביבס.
+  STORY
+  cover_image_url:         "/images/orange-garden.png",
+  video_url:               "https://youtu.be/4Z_xXXR3ddU",
+  goal_amount_cents:       200_000_000,   # ₪2,000,000
+  bonus_goal_amount_cents: 300_000_000,   # ₪3,000,000
+  currency:                "ILS"
+)
+
+# Donations totalling ~₪1,064,883 → 53% of ₪2,000,000 goal
+[
+  { donor_name: "עופרי ביבס",       amount_cents:  5_000_000, status: "paid",    frequency: "one_time", display_preference: "full_name",  dedication: "לזכר שירי, אריאל וכפיר",      created_at: 60.days.ago },
+  { donor_name: "דורית כהן",        amount_cents: 10_000_000, status: "paid",    frequency: "one_time", display_preference: "full_name",  dedication: nil,                            created_at: 45.days.ago },
+  { donor_name: "משה לוי",          amount_cents:  8_000_000, status: "paid",    frequency: "monthly",  display_preference: "full_name",  dedication: nil,                            created_at: 40.days.ago },
+  { donor_name: "רחל ישראלי",       amount_cents: 15_000_000, status: "paid",    frequency: "one_time", display_preference: "first_name", dedication: nil,                            created_at: 35.days.ago },
+  { donor_name: "אנונימי",          amount_cents: 20_000_000, status: "paid",    frequency: "one_time", display_preference: "anonymous",  dedication: nil,                            created_at: 30.days.ago },
+  { donor_name: "יוסי גולן",        amount_cents:  5_000_000, status: "paid",    frequency: "monthly",  display_preference: "full_name",  dedication: "לזכר ילדי ה-7 באוקטובר",     created_at: 25.days.ago },
+  { donor_name: "שרה מזרחי",        amount_cents:  3_000_000, status: "paid",    frequency: "one_time", display_preference: "full_name",  dedication: nil,                            created_at: 20.days.ago },
+  { donor_name: "אבי שפירא",        amount_cents: 12_000_000, status: "paid",    frequency: "one_time", display_preference: "full_name",  dedication: nil,                            created_at: 15.days.ago },
+  { donor_name: "נועה ברון",        amount_cents:  7_000_000, status: "paid",    frequency: "monthly",  display_preference: "first_name", dedication: nil,                            created_at: 10.days.ago },
+  { donor_name: "גיל אלון",         amount_cents:  4_000_000, status: "paid",    frequency: "one_time", display_preference: "full_name",  dedication: nil,                            created_at:  7.days.ago },
+  { donor_name: "מירב רוזן",        amount_cents:  6_000_000, status: "paid",    frequency: "one_time", display_preference: "full_name",  dedication: nil,                            created_at:  5.days.ago },
+  { donor_name: "דן שחר",           amount_cents:  9_000_000, status: "paid",    frequency: "one_time", display_preference: "full_name",  dedication: nil,                            created_at:  3.days.ago },
+  { donor_name: "תמי פרץ",          amount_cents:  2_500_000, status: "pending", frequency: "one_time", display_preference: "full_name",  dedication: nil,                            created_at:  2.hours.ago },
+  { donor_name: "יעל דוד",          amount_cents:  1_388_300, status: "pending", frequency: "monthly",  display_preference: "first_name", dedication: nil,                            created_at:  1.hour.ago  },
+].each { |attrs| campaign_d.donations.create!(currency: "ILS", **attrs) }
+
+# Verify: 5+10+8+15+20+5+3+12+7+4+6+9 = 104M paid + 2.5M+1.388M pending = 107,888,300 agorot ≈ 53.9%
+
 puts "Seeded #{Campaign.count} campaigns, #{Donation.count} donations."
 puts "Campaign A progress: #{campaign_a.main_progress_percentage}%  (expect ~53)"
 puts "Campaign B has_bonus_goal?: #{campaign_b.has_bonus_goal?}  (expect false)"
 puts "Campaign C progress: #{campaign_c.main_progress_percentage}%  (expect ~175)"
+puts "Campaign D (Orange Garden) progress: #{campaign_d.main_progress_percentage}%"
