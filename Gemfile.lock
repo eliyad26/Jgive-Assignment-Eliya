@@ -90,6 +90,7 @@ GEM
       reline (>= 0.3.8)
     drb (2.2.3)
     erb (6.0.4)
+    error_highlight (0.7.1)
     erubi (1.13.1)
     globalid (1.4.0)
       activesupport (>= 6.1)
@@ -130,6 +131,10 @@ GEM
     nio4r (2.7.5)
     nokogiri (1.19.4-x64-mingw-ucrt)
       racc (~> 1.4)
+    nokogiri (1.19.4-x86_64-linux-gnu)
+      racc (~> 1.4)
+    pg (1.6.3-x64-mingw-ucrt)
+    pg (1.6.3-x86_64-linux)
     pp (0.6.4)
       prettyprint
     prettyprint (0.2.0)
@@ -186,6 +191,7 @@ GEM
       io-console (~> 0.5)
     securerandom (0.4.1)
     sqlite3 (2.9.5-x64-mingw-ucrt)
+    sqlite3 (2.9.5-x86_64-linux-gnu)
     stringio (3.2.0)
     thor (1.5.0)
     timeout (0.6.1)
@@ -214,6 +220,7 @@ DEPENDENCIES
   bootsnap
   debug
   error_highlight (>= 0.4.0)
+  pg
   psych (~> 5.0.0)
   puma (>= 5.0)
   rails (~> 8.1)
