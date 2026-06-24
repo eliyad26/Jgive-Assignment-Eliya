@@ -14,7 +14,7 @@
   <div class="bg-white rounded-2xl shadow-md border border-gray-100 p-6">
 
     <%# ── Card heading ────────────────────────────────────────────────────── %>
-    <h2 class="text-lg font-black text-gray-900 text-center mb-5">
+    <h2 class="text-lg font-black text-center mb-5" style="color:#d426ff">
       <span class="lang-he">תרמו עכשיו</span><span class="lang-en">Donate Now</span>
     </h2>
 
@@ -56,7 +56,7 @@
                        <%= is_active ? 'bg-white shadow-sm font-semibold text-teal-600' : 'font-medium text-gray-500' %>">
           <span class="lang-he"><%= label_he %></span><span class="lang-en"><%= label_en %></span>
           <% if freq == "monthly" %>
-            <span class="block text-[10px] font-normal mt-0.5" style="color:#0da89e">
+            <span class="block text-[10px] font-normal mt-0.5" style="color:#008043">
               <span class="lang-he">מומלץ</span><span class="lang-en">Recommended</span>
             </span>
           <% end %>
@@ -75,8 +75,9 @@
         <button type="button" data-preset="<%= amt %>"
                 class="preset-btn py-3 rounded-xl text-sm font-bold border transition-all duration-100
                        <%= active \
-                           ? 'border-teal-500 bg-teal-50 text-teal-600 ring-1 ring-teal-400/50' \
-                           : 'border-gray-200 text-gray-600 hover:border-teal-300 hover:text-teal-600' %>">
+                           ? 'border-brand-purple bg-purple-50 ring-1' \
+                           : 'border-gray-200' %>"
+                style="color:#d426ff<%= active ? ';box-shadow:0 0 0 1px #d426ff40' : '' %>">
           ₪<%= number_with_delimiter(amt) %>
         </button>
       <% end %>
@@ -87,8 +88,9 @@
       <input type="number" id="donation-amount" name="donation[amount_ils]"
              min="1" step="1" value="<%= amount_ils %>"
              placeholder="סכום אחר (₪)"
+             style="color:#d426ff"
              class="w-full py-3 px-4 rounded-xl border text-center text-base font-bold
-                    text-gray-800 focus:outline-none focus:ring-2 focus:ring-teal-400
+                    focus:outline-none focus:ring-2 focus:ring-teal-400
                     focus:border-transparent transition-shadow
                     <%= donation.errors[:amount_cents].any? ? 'border-red-400 ring-1 ring-red-300' : 'border-gray-200' %>">
       <% if donation.errors[:amount_cents].any? %>
@@ -178,8 +180,8 @@
 
   // ── Preset amount buttons ─────────────────────────────────────────────────
   var presetBtns = document.querySelectorAll('.preset-btn');
-  var ACTIVE_P   = ['border-teal-500','bg-teal-50','text-teal-600','ring-1','ring-teal-400/50'];
-  var INACTIVE_P = ['border-gray-200','text-gray-600'];
+  var ACTIVE_P   = ['border-brand-purple','bg-purple-50','ring-1'];
+  var INACTIVE_P = ['border-gray-200'];
 
   function clearPresets() {
     presetBtns.forEach(function (b) {
