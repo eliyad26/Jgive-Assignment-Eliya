@@ -1,40 +1,74 @@
 <% content_for :title, @campaign.title %>
 
-<%# ── Campaign header strip ──────────────────────────────────────────────── %>
+<%# ── Hero media — full-width thumbnail, click to play inline ───────────── %>
+<% yt_id = @campaign.video_url.present? \
+     ? @campaign.video_url.match(%r{(?:v=|youtu\.be/)([^&\n?#]+)})&.[](1) \
+     : nil %>
+<% if yt_id %>
+  <% embed_url = "https://www.youtube.com/embed/#{yt_id}" %>
+  <%# Container: fixed height captured by JS before iframe swap %>
+  <div id="hero-wrap"
+       class="relative w-full bg-black overflow-hidden cursor-pointer select-none"
+       onclick="playHeroVideo(this,'<%= j embed_url %>')">
+    <%# Thumbnail — maxresdefault with hqdefault fallback %>
+    <img src="https://img.youtube.com/vi/<%= yt_id %>/maxresdefault.jpg"
+         onerror="this.src='https://img.youtube.com/vi/<%= yt_id %>/hqdefault.jpg'"
+         alt="<%= @campaign.title %>"
+         class="w-full block"
+         style="max-height:420px;object-fit:cover">
+    <%# Bottom gradient so title is readable %>
+    <div class="absolute inset-0 pointer-events-none"
+         style="background:linear-gradient(to top,rgba(0,0,0,0.65) 0%,transparent 55%)"></div>
+    <%# Title overlay %>
+    <div class="absolute bottom-0 inset-x-0 p-6 md:p-10 pointer-events-none">
+      <p class="text-white font-black text-2xl md:text-5xl drop-shadow-lg leading-tight">
+        <%= @campaign.title %>
+      </p>
+    </div>
+    <%# Play button %>
+    <div class="absolute inset-0 flex items-center justify-center pointer-events-none">
+      <div class="w-16 h-16 md:w-20 md:h-20 rounded-full flex items-center justify-center shadow-2xl"
+           style="background:rgba(255,255,255,0.85)">
+        <svg class="w-8 h-8 md:w-10 md:h-10" fill="#1a1a1a" viewBox="0 0 24 24"
+             style="margin-inline-start:4px">
+          <path d="M8 5v14l11-7z"/>
+        </svg>
+      </div>
+    </div>
+  </div>
+  <script>
+  function playHeroVideo(container, embedUrl) {
+    var h = container.offsetHeight;
+    container.style.height = h + 'px';
+    container.style.cursor = 'default';
+    container.onclick = null;
+    container.innerHTML =
+      '<iframe src="' + embedUrl + '?autoplay=1&rel=0&modestbranding=1"' +
+      ' allow="accelerometer;autoplay;clipboard-write;encrypted-media;gyroscope;picture-in-picture"' +
+      ' allowfullscreen style="width:100%;height:100%;border:0;display:block"></iframe>';
+  }
+  </script>
+<% elsif @campaign.cover_image_url.present? %>
+  <div class="relative w-full bg-black overflow-hidden">
+    <img src="<%= @campaign.cover_image_url %>"
+         alt="<%= @campaign.title %>"
+         class="w-full block" style="max-height:420px;object-fit:cover">
+    <div class="absolute inset-0 pointer-events-none"
+         style="background:linear-gradient(to top,rgba(0,0,0,0.65) 0%,transparent 55%)"></div>
+    <div class="absolute bottom-0 inset-x-0 p-6 md:p-10 pointer-events-none">
+      <p class="text-white font-black text-2xl md:text-5xl drop-shadow-lg leading-tight">
+        <%= @campaign.title %>
+      </p>
+    </div>
+  </div>
+<% end %>
+
+<%# ── Campaign stats strip ───────────────────────────────────────────────── %>
 <section class="bg-white border-b border-gray-200 py-8">
   <div class="max-w-6xl mx-auto px-4">
 
-    <%# Two-column: in RTL flex-row the first child lands on the RIGHT %>
-    <div class="flex flex-col md:flex-row gap-8 items-start">
-
-      <%# ── Media column (RIGHT in RTL) ─────────────────────────────────── %>
-      <div class="w-full md:w-1/2 flex-shrink-0">
-        <% if @campaign.video_url.present? && (embed = youtube_embed_url(@campaign.video_url)) %>
-          <div class="relative rounded-2xl overflow-hidden shadow-xl bg-black" style="padding-top:56.25%">
-            <iframe class="absolute inset-0 w-full h-full"
-                    src="<%= embed %>?rel=0&modestbranding=1"
-                    title="<%= @campaign.title %>"
-                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                    allowfullscreen></iframe>
-          </div>
-        <% elsif @campaign.cover_image_url.present? %>
-          <img src="<%= @campaign.cover_image_url %>"
-               alt="<%= @campaign.title %>"
-               class="w-full rounded-2xl shadow-xl object-cover aspect-video">
-        <% else %>
-          <div class="w-full rounded-2xl shadow-xl bg-gradient-to-br from-teal-100 to-teal-50 flex items-center justify-center aspect-video">
-            <svg class="w-20 h-20 text-teal-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
-                    d="M15 10l4.553-2.276A1 1 0 0121 8.723v6.554a1 1 0
-                       01-1.447.894L15 14M3 8a2 2 0 012-2h10a2 2 0 012 2v8a2
-                       2 0 01-2 2H5a2 2 0 01-2-2V8z"/>
-            </svg>
-          </div>
-        <% end %>
-      </div>
-
-      <%# ── Summary panel (LEFT in RTL) ─────────────────────────────────── %>
-      <div class="flex-1 flex flex-col">
+      <%# ── Summary panel ──────────────────────────────────────────────── %>
+      <div class="flex flex-col">
 
         <%# Title & slogan %>
         <h1 class="text-3xl md:text-4xl font-black text-gray-900 leading-tight mb-2">
@@ -46,7 +80,7 @@
 
         <%# Amount raised (hero number) %>
         <div class="mb-1">
-          <span class="text-5xl font-black" style="color:#0da89e">
+          <span class="text-5xl font-black" style="color:#008043">
             <%= format_ils_tag(@campaign.total_raised_cents) %>
           </span>
         </div>
@@ -67,67 +101,80 @@
           <span class="lang-he">תורמים</span><span class="lang-en">donors</span>
         </p>
 
-        <%# ── Dual-zone progress bar ──────────────────────────────────────── %>
+        <%# ── Progress bar ──────────────────────────────────────────────────── %>
         <% segs = progress_bar_segments(@campaign) %>
         <div class="mb-4">
-          <%# dir:ltr so bar fills left→right regardless of page RTL %>
-          <div class="relative h-5 rounded-full bg-gray-200 overflow-hidden" dir="ltr">
-
-            <%# Primary zone: 0 → goal (teal) %>
-            <div class="absolute inset-y-0 left-0 rounded-l-full transition-all duration-700"
-                 style="width:<%= segs[:teal] %>%; background-color:#0da89e"></div>
-
-            <%# Overflow zone: goal → raised (orange) %>
-            <% if segs[:orange] > 0 %>
-              <div class="absolute inset-y-0 transition-all duration-700"
-                   style="left:<%= segs[:teal] %>%; width:<%= segs[:orange] %>%; background-color:#ff6b35"></div>
+          <%# Outer wrapper is relative so the heart SVG can escape overflow-hidden %>
+          <div class="relative" dir="ltr">
+            <div class="relative h-5 rounded-full bg-gray-200 overflow-hidden">
+              <% if segs[:type] == :dual %>
+                <%# Green zone from right (main goal threshold) %>
+                <div class="absolute inset-y-0 right-0"
+                     style="width:<%= segs[:green_right] %>%; background-color:#008043"></div>
+                <%# Purple fill from left (raised progress — drawn on top of green) %>
+                <div class="absolute inset-y-0 left-0 rounded-l-full"
+                     style="width:<%= segs[:purple] %>%; background-color:#d426ff"></div>
+              <% else %>
+                <%# Single goal: simple green fill from left %>
+                <div class="absolute inset-y-0 left-0 rounded-l-full"
+                     style="width:<%= segs[:fill] %>%; background-color:#008043"></div>
+              <% end %>
+            </div>
+            <%# Orange heart at tip of fill — sits outside overflow-hidden so it floats %>
+            <% heart_pos = segs[:type] == :dual ? segs[:heart_left] : segs[:fill] %>
+            <% if heart_pos > 0 %>
+              <div class="absolute inset-y-0 z-10 flex items-center pointer-events-none"
+                   style="left:<%= heart_pos %>%; transform:translateX(-50%)">
+                <svg class="w-5 h-5 drop-shadow" viewBox="0 0 20 20" fill="#f59e0b">
+                  <path fill-rule="evenodd" d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z" clip-rule="evenodd"/>
+                </svg>
+              </div>
             <% end %>
-
-            <%# Goal-line divider %>
-            <% if @campaign.has_bonus_goal? && segs[:goal_marker] < 99.5 %>
-              <div class="absolute inset-y-0 w-0.5 bg-white/70 z-10"
-                   style="left:<%= segs[:goal_marker] %>%"></div>
-            <% end %>
-
           </div>
 
           <%# Labels below bar %>
-          <div class="flex items-center justify-between mt-1.5 text-xs font-medium" dir="ltr">
-            <span style="color:#0da89e"><%= @campaign.main_progress_percentage %>%</span>
-            <% if segs[:orange] > 0 %>
-              <span style="color:#ff6b35" class="text-xs">
-                <span class="lang-he">גויסו</span><span class="lang-en">Raised</span>
-                <%= format_ils_tag(@campaign.total_raised_cents - @campaign.goal_amount_cents) %>
-                <span class="lang-he">מעבר ליעד</span><span class="lang-en">beyond goal</span>
-              </span>
-            <% end %>
-          </div>
+          <% if segs[:type] == :dual %>
+            <div class="flex items-start justify-between mt-2 text-xs">
+              <%# First → RIGHT in RTL: donor count %>
+              <div style="color:#008043">
+                <span class="font-bold"><%= number_with_delimiter(@campaign.donor_count) %></span>
+                <span class="font-normal text-gray-400"> :<span class="lang-he">תורמים</span><span class="lang-en">donors</span></span>
+              </div>
+              <%# Center: main goal %>
+              <div class="text-center" style="color:#008043">
+                <span class="font-bold"><%= format_ils_tag(@campaign.goal_amount_cents) %></span>
+                <span class="font-normal text-gray-400"> :<span class="lang-he">יעד</span><span class="lang-en">goal</span></span>
+              </div>
+              <%# Last → LEFT in RTL: bonus goal %>
+              <div style="color:#d426ff">
+                <span class="font-bold"><%= format_ils_tag(@campaign.bonus_goal_amount_cents) %></span>
+                <span class="font-normal opacity-70"> :<span class="lang-he">יעד בונוס</span><span class="lang-en">bonus</span></span>
+              </div>
+            </div>
+          <% else %>
+            <div class="flex items-center mt-1.5 text-xs font-medium">
+              <span style="color:#008043"><%= @campaign.main_progress_percentage %>%</span>
+            </div>
+          <% end %>
         </div>
 
-        <%# ── CTA button ──────────────────────────────────────────────────── %>
-        <%= link_to "#donation-form",
-              class: "mt-2 block w-full text-center text-white font-black text-xl
-                      py-4 px-6 rounded-2xl shadow-lg transition-colors duration-200",
-              style: "background-color:#d426ff",
-              onmouseover: "this.style.backgroundColor='#b800e0'",
-              onmouseout:  "this.style.backgroundColor='#d426ff'" do %>
+        <%# ── CTA button — opens donation modal ──────────────────────────── %>
+        <button type="button" onclick="openDonationModal()"
+                class="mt-2 block w-full text-center text-white font-black text-xl
+                       py-4 px-6 rounded-2xl shadow-lg transition-colors duration-200 cursor-pointer"
+                style="background-color:#d426ff"
+                onmouseover="this.style.backgroundColor='#b800e0'"
+                onmouseout="this.style.backgroundColor='#d426ff'">
           <span class="lang-he">תרום עכשיו</span><span class="lang-en">Donate Now</span>
-        <% end %>
+        </button>
 
       </div><%# /summary panel %>
-    </div><%# /two-column %>
   </div><%# /container %>
 </section>
 
 <%# ── Two-column layout: sidebar (form) + main content (tabs) ─────────────── %>
 <div class="max-w-6xl mx-auto px-4 py-8">
   <div class="flex flex-col lg:flex-row items-start gap-8">
-
-    <%# ── Donation form sidebar ────────────────────────────────────────────── %>
-    <aside id="donation-form"
-           class="w-full lg:w-80 xl:w-96 flex-shrink-0 lg:sticky lg:top-20 lg:self-start">
-      <%= render "donations/form", campaign: @campaign, donation: @donation %>
-    </aside>
 
     <%# ── Main content: tabs + tab panels ───────────────────────────────────── %>
     <div class="flex-1 min-w-0">
@@ -237,7 +284,7 @@
 
                   <%# Amount + badge %>
                   <div class="flex flex-col items-end gap-1 flex-shrink-0">
-                    <span class="font-black text-base" style="color:#0da89e">
+                    <span class="font-black text-base" style="color:#008043">
                       <%= format_ils_tag(donation.amount_cents) %>
                     </span>
                     <% if donation.pending? %>
@@ -267,3 +314,47 @@
 
   </div><%# /two-column flex %>
 </div>
+
+<%# ── Donation modal ─────────────────────────────────────────────────────── %>
+<div id="donation-modal"
+     class="fixed inset-0 z-50 flex items-center justify-center p-4 hidden"
+     role="dialog" aria-modal="true">
+  <%# Backdrop %>
+  <div class="absolute inset-0 bg-black/50 backdrop-blur-sm"
+       onclick="closeDonationModal()"></div>
+  <%# Panel %>
+  <div class="relative z-10 w-full max-w-md max-h-[90vh] overflow-y-auto rounded-2xl shadow-2xl bg-white"
+       style="border:2px solid #d426ff;scrollbar-width:none;-ms-overflow-style:none">
+    <%# Close button %>
+    <button type="button" onclick="closeDonationModal()"
+            class="absolute top-3 end-3 z-20 w-8 h-8 rounded-full flex items-center justify-center
+                   hover:bg-gray-100 text-xl leading-none cursor-pointer font-bold"
+            style="color:#d426ff">
+      ×
+    </button>
+    <%= render "donations/form", campaign: @campaign, donation: @donation %>
+  </div>
+</div>
+
+<script>
+(function () {
+  function openDonationModal() {
+    document.getElementById('donation-modal').classList.remove('hidden');
+    document.body.style.overflow = 'hidden';
+  }
+  function closeDonationModal() {
+    document.getElementById('donation-modal').classList.add('hidden');
+    document.body.style.overflow = '';
+  }
+  window.openDonationModal  = openDonationModal;
+  window.closeDonationModal = closeDonationModal;
+
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape') closeDonationModal();
+  });
+
+  <% if @donation.errors.any? %>
+  openDonationModal();
+  <% end %>
+}());
+</script>
