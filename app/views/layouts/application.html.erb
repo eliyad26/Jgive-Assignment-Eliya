@@ -25,9 +25,19 @@
         extend: {
           fontFamily: { sans: ['Heebo', 'sans-serif'] },
           colors: {
+            teal: {
+              50:  '#e6f4ed',
+              100: '#c2e4d4',
+              200: '#87c9a9',
+              300: '#4cad7e',
+              400: '#199263',
+              500: '#008043',
+              600: '#006635',
+              700: '#004d28',
+            },
             brand: {
-              teal:        '#0da89e',
-              tealDk:      '#0a8f86',
+              green:       '#008043',
+              greenDk:     '#006635',
               orange:      '#ff6b35',
               orangeHover: '#e85e2a',
               purple:      '#d426ff',
@@ -41,6 +51,7 @@
   <style>
     body { font-family: 'Heebo', sans-serif; }
     html { scroll-behavior: smooth; }
+    #donation-modal .overflow-y-auto::-webkit-scrollbar { display: none; }
     /* Language toggle — English spans hidden by default; shown when html.is-en */
     .lang-en { display: none; }
     html.is-en .lang-he { display: none !important; }
@@ -65,7 +76,7 @@
   <%# ── Minimal site header ──────────────────────────────────── %>
   <header class="bg-white border-b border-gray-200 sticky top-0 z-30 shadow-sm">
     <div class="max-w-6xl mx-auto px-4 h-14 flex items-center justify-between">
-      <span class="text-2xl font-black tracking-tight" style="color:#0da89e">jgive</span>
+      <span class="text-2xl font-black tracking-tight" style="color:#111827">j<span style="color:#d426ff">♥</span>give</span>
       <div class="flex items-center gap-4">
         <nav class="text-sm text-gray-500 flex gap-5">
           <a href="#" class="hover:text-gray-800 transition-colors">
