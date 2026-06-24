@@ -16,33 +16,26 @@ module ApplicationHelper
     "https://www.youtube.com/embed/#{match[1]}" if match
   end
 
-  # Dual-zone progress bar widths.
-  # The "domain" is bonus_goal (if present) or max(goal, raised) so the bar
-  # always fits in 100% of the container width.
-  #
-  # Returns { teal:, orange:, goal_marker: } as percentages of container width.
-  #   teal        — fill from 0 to the goal marker (primary zone)
-  #   orange      — fill from goal marker to raised amount (overflow zone)
-  #   goal_marker — where to draw the goal divider line
+  # Progress bar segments.
+  # Dual-goal: bar domain = bonus_goal. Purple fills from left (raised/bonus).
+  #            Green fills from right ((bonus-goal)/bonus). Heart at tip of purple.
+  # Single-goal: green fills from left (raised/goal). Heart at tip of green.
   def progress_bar_segments(campaign)
     raised = campaign.total_raised_cents.to_f
     goal   = campaign.goal_amount_cents.to_f
-    return { teal: 0.0, orange: 0.0, goal_marker: 100.0 } if goal.zero?
+    return { type: :single, fill: 0.0 } if goal.zero?
 
-    domain = if campaign.has_bonus_goal?
-               campaign.bonus_goal_amount_cents.to_f
-             elsif raised > goal
-               raised
-             else
-               goal
-             end
-    return { teal: 0.0, orange: 0.0, goal_marker: 100.0 } if domain.zero?
+    if campaign.has_bonus_goal?
+      bonus = campaign.bonus_goal_amount_cents.to_f
+      return { type: :dual, purple: 0.0, green_right: 0.0, heart_left: 0.0 } if bonus.zero?
 
-    fill_pct        = [(raised / domain * 100), 100.0].min
-    goal_marker_pct = [(goal / domain * 100), 100.0].min
-    teal_pct        = [fill_pct, goal_marker_pct].min
-    orange_pct      = [fill_pct - goal_marker_pct, 0.0].max
-
-    { teal: teal_pct.round(2), orange: orange_pct.round(2), goal_marker: goal_marker_pct.round(2) }
+      purple_pct  = [(raised / bonus * 100), 100.0].min.round(2)
+      green_right = [((bonus - goal) / bonus * 100), 100.0].min.round(2)
+      heart_left  = (100.0 - green_right).round(2)
+      { type: :dual, purple: purple_pct, green_right: green_right, heart_left: heart_left }
+    else
+      fill_pct = [(raised / goal * 100), 100.0].min.round(2)
+      { type: :single, fill: fill_pct }
+    end
   end
 end
