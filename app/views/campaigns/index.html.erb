@@ -1,0 +1,109 @@
+<% content_for :title, "קמפיינים | JGive" %>
+
+<div class="max-w-6xl mx-auto px-4 py-10">
+
+  <%# Page heading %>
+  <div class="mb-8 text-center">
+    <h1 class="text-3xl font-black text-gray-900 mb-1">
+      <span class="lang-he">קמפיינים פעילים</span>
+      <span class="lang-en">Active Campaigns</span>
+    </h1>
+    <p class="text-gray-400 text-sm">
+      <span class="lang-he">בחרו קמפיין ותרמו עכשיו</span>
+      <span class="lang-en">Choose a campaign and donate now</span>
+    </p>
+  </div>
+
+  <%# Campaign cards grid %>
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+    <% @campaigns.each do |campaign| %>
+      <% yt_id = campaign.video_url.present? \
+           ? campaign.video_url.match(%r{(?:v=|youtu\.be/)([^&\n?#]+)})&.[](1) \
+           : nil %>
+      <%# Card — entire card is clickable %>
+      <%= link_to campaign_path(campaign), class: "group block bg-white rounded-2xl shadow-md border border-gray-100 overflow-hidden hover:shadow-xl transition-shadow duration-200" do %>
+
+        <%# Cover image / thumbnail %>
+        <div class="relative overflow-hidden" style="height:220px">
+          <% if campaign.cover_image_url.present? %>
+            <img src="<%= campaign.cover_image_url %>"
+                 alt="<%= campaign.title %>"
+                 class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300">
+          <% elsif yt_id %>
+            <img src="https://img.youtube.com/vi/<%= yt_id %>/maxresdefault.jpg"
+                 onerror="this.src='https://img.youtube.com/vi/<%= yt_id %>/hqdefault.jpg'"
+                 alt="<%= campaign.title %>"
+                 class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300">
+          <% else %>
+            <div class="w-full h-full bg-gradient-to-br from-teal-50 to-teal-100 flex items-center justify-center">
+              <svg class="w-16 h-16 text-teal-200" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                      d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/>
+              </svg>
+            </div>
+          <% end %>
+          <%# Gradient overlay + title %>
+          <div class="absolute inset-0"
+               style="background:linear-gradient(to top,rgba(0,0,0,0.7) 0%,transparent 50%)"></div>
+          <div class="absolute bottom-0 inset-x-0 p-4">
+            <h2 class="text-white font-black text-lg leading-snug drop-shadow">
+              <%= campaign.title %>
+            </h2>
+            <% if campaign.slogan.present? %>
+              <p class="text-white/80 text-xs mt-0.5 line-clamp-1"><%= campaign.slogan %></p>
+            <% end %>
+          </div>
+        </div>
+
+        <%# Stats strip %>
+        <div class="px-5 py-4">
+          <%# Raised amount %>
+          <div class="flex items-baseline justify-between mb-3">
+            <span class="text-2xl font-black" style="color:#008043">
+              <%= format_ils_tag(campaign.total_raised_cents) %>
+            </span>
+            <span class="text-xs text-gray-400">
+              <span class="lang-he">מתוך</span><span class="lang-en">of</span>
+              <span class="font-semibold text-gray-600"><%= format_ils_tag(campaign.goal_amount_cents) %></span>
+            </span>
+          </div>
+
+          <%# Mini progress bar %>
+          <% segs = progress_bar_segments(campaign) %>
+          <div class="relative h-2.5 rounded-full bg-gray-100 overflow-hidden mb-2" dir="ltr">
+            <% if segs[:type] == :dual %>
+              <div class="absolute inset-y-0 right-0 rounded-full"
+                   style="width:<%= segs[:green_right] %>%; background-color:#008043"></div>
+              <div class="absolute inset-y-0 left-0 rounded-full"
+                   style="width:<%= segs[:purple] %>%; background-color:#d426ff"></div>
+            <% else %>
+              <div class="absolute inset-y-0 left-0 rounded-full"
+                   style="width:<%= segs[:fill] %>%; background-color:#008043"></div>
+            <% end %>
+          </div>
+
+          <%# Footer: donor count + percentage %>
+          <div class="flex items-center justify-between text-xs text-gray-500">
+            <span>
+              <span class="font-bold text-gray-700"><%= number_with_delimiter(campaign.donor_count) %></span>
+              <span class="lang-he"> תורמים</span><span class="lang-en"> donors</span>
+            </span>
+            <span class="font-bold" style="color:<%= segs[:type] == :dual ? '#d426ff' : '#008043' %>">
+              <%= campaign.main_progress_percentage %>%
+            </span>
+          </div>
+        </div>
+
+        <%# Donate CTA %>
+        <div class="px-5 pb-5">
+          <span class="block w-full text-center text-white font-black py-3 rounded-xl text-sm"
+                style="background-color:#d426ff">
+            <span class="lang-he">לתרומה</span><span class="lang-en">Donate</span>
+          </span>
+        </div>
+
+      <% end %>
+    <% end %>
+  </div>
+
+</div>
